@@ -3,7 +3,7 @@ from pathlib import Path
 
 from dotenv import load_dotenv
 
-BASE_DIR = Path(__file__).resolve().parent.parent
+BASE_DIR = Path(__file__).resolve().parent.parent.parent
 
 load_dotenv(os.path.join(BASE_DIR, '.env'))
 
@@ -25,7 +25,7 @@ INSTALLED_APPS = [
     'rest_framework_simplejwt',
     'api.apps.ApiConfig',
     'users.apps.UsersConfig',
-    'food.apps.FoodConfig',
+    'recipes.apps.RecipesConfig',
 ]
 
 MIDDLEWARE = [
@@ -59,7 +59,7 @@ TEMPLATES = [
 WSGI_APPLICATION = 'foodgram.wsgi.application'
 
 DATABASES = {
-    'default': (
+    'default':
         {
             'ENGINE': 'django.db.backends.sqlite3',
             'NAME': BASE_DIR / 'db.sqlite3',
@@ -71,7 +71,6 @@ DATABASES = {
             'HOST': os.getenv('DB_HOST', ''),
             'PORT': os.getenv('DB_PORT', 5432)
         }
-    )
 }
 
 AUTH_PASSWORD_VALIDATORS = [

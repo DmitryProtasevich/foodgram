@@ -3,7 +3,7 @@ from django.db import models
 
 from users.constants import LIMIT_EMAIL, LIMIT_USERNAME
 from users.validators import username_validator
-from food.models import Recipe
+from recipes.models import Recipe
 
 
 class User(AbstractUser):
