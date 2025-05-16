@@ -1,14 +1,15 @@
 from django.contrib.auth.models import AbstractUser
 from django.db import models
 
+from recipes.models import Recipe
 from users.constants import LIMIT_EMAIL, LIMIT_USERNAME
 from users.validators import username_validator
-from recipes.models import Recipe
 
 
 class User(AbstractUser):
     """Модель пользователей."""
-
+    USERNAME_FIELD = 'email'
+    REQUIRED_FIELDS = ['username']
     ADMIN = 'admin'
     MODERATOR = 'moderator'
     USER = 'user'
@@ -40,19 +41,17 @@ class User(AbstractUser):
         choices=ROLE_CHOICES,
         default=USER,
     )
-    bio = models.TextField(
-        'Биография',
-        blank=True
-    )
     first_name = models.CharField(
         'Имя',
         max_length=LIMIT_USERNAME,
-        blank=True
     )
     last_name = models.CharField(
         'Фамилия',
         max_length=LIMIT_USERNAME,
-        blank=True
+    )
+    is_subscribed = models.BooleanField(
+        'Подписка',
+        default=False
     )
     favorites = models.ManyToManyField(
         Recipe,
@@ -65,6 +64,10 @@ class User(AbstractUser):
         related_name='shopping_list_users',
         verbose_name='Список покупок',
         blank=True
+    )
+    avatar = models.ImageField(
+        'Аватар',
+        blank=True,
     )
 
     class Meta:

@@ -1,0 +1,65 @@
+Requirement already satisfied: djoser in ./venv/lib/python3.9/site-packages (2.1.0)
+Collecting djoser
+  Downloading djoser-2.3.1-py3-none-any.whl.metadata (5.8 kB)
+Requirement already satisfied: django>=3.0.0 in ./venv/lib/python3.9/site-packages (from djoser) (3.2.16)
+Collecting djangorestframework-simplejwt<6.0,>=5.0 (from djoser)
+  Downloading djangorestframework_simplejwt-5.5.0-py3-none-any.whl.metadata (4.6 kB)
+Collecting social-auth-app-django<6.0.0,>=5.0.0 (from djoser)
+  Downloading social_auth_app_django-5.4.3-py3-none-any.whl.metadata (2.8 kB)
+Collecting django>=3.0.0 (from djoser)
+  Downloading django-4.2.21-py3-none-any.whl.metadata (4.2 kB)
+Collecting djangorestframework>=3.14 (from djangorestframework-simplejwt<6.0,>=5.0->djoser)
+  Downloading djangorestframework-3.16.0-py3-none-any.whl.metadata (11 kB)
+Collecting pyjwt<2.10.0,>=1.7.1 (from djangorestframework-simplejwt<6.0,>=5.0->djoser)
+  Downloading PyJWT-2.9.0-py3-none-any.whl.metadata (3.0 kB)
+Requirement already satisfied: social-auth-core~=4.4 in ./venv/lib/python3.9/site-packages (from social-auth-app-django<6.0.0,>=5.0.0->djoser) (4.6.1)
+Requirement already satisfied: cryptography>=1.4 in ./venv/lib/python3.9/site-packages (from social-auth-core~=4.4->social-auth-app-django<6.0.0,>=5.0.0->djoser) (44.0.3)
+Requirement already satisfied: defusedxml>=0.5.0 in ./venv/lib/python3.9/site-packages (from social-auth-core~=4.4->social-auth-app-django<6.0.0,>=5.0.0->djoser) (0.7.1)
+Requirement already satisfied: oauthlib>=1.0.3 in ./venv/lib/python3.9/site-packages (from social-auth-core~=4.4->social-auth-app-django<6.0.0,>=5.0.0->djoser) (3.2.2)
+Requirement already satisfied: python3-openid>=3.0.10 in ./venv/lib/python3.9/site-packages (from social-auth-core~=4.4->social-auth-app-django<6.0.0,>=5.0.0->djoser) (3.2.0)
+Requirement already satisfied: requests-oauthlib>=0.6.1 in ./venv/lib/python3.9/site-packages (from social-auth-core~=4.4->social-auth-app-django<6.0.0,>=5.0.0->djoser) (2.0.0)
+Requirement already satisfied: requests>=2.9.1 in ./venv/lib/python3.9/site-packages (from social-auth-core~=4.4->social-auth-app-django<6.0.0,>=5.0.0->djoser) (2.32.3)
+Requirement already satisfied: cffi>=1.12 in ./venv/lib/python3.9/site-packages (from cryptography>=1.4->social-auth-core~=4.4->social-auth-app-django<6.0.0,>=5.0.0->djoser) (1.17.1)
+Requirement already satisfied: pycparser in ./venv/lib/python3.9/site-packages (from cffi>=1.12->cryptography>=1.4->social-auth-core~=4.4->social-auth-app-django<6.0.0,>=5.0.0->djoser) (2.22)
+Requirement already satisfied: asgiref<4,>=3.6.0 in ./venv/lib/python3.9/site-packages (from django>=3.0.0->djoser) (3.8.1)
+Requirement already satisfied: sqlparse>=0.3.1 in ./venv/lib/python3.9/site-packages (from django>=3.0.0->djoser) (0.5.3)
+Requirement already satisfied: typing-extensions>=4 in ./venv/lib/python3.9/site-packages (from asgiref<4,>=3.6.0->django>=3.0.0->djoser) (4.13.2)
+Requirement already satisfied: charset-normalizer<4,>=2 in ./venv/lib/python3.9/site-packages (from requests>=2.9.1->social-auth-core~=4.4->social-auth-app-django<6.0.0,>=5.0.0->djoser) (3.4.2)
+Requirement already satisfied: idna<4,>=2.5 in ./venv/lib/python3.9/site-packages (from requests>=2.9.1->social-auth-core~=4.4->social-auth-app-django<6.0.0,>=5.0.0->djoser) (3.10)
+Requirement already satisfied: urllib3<3,>=1.21.1 in ./venv/lib/python3.9/site-packages (from requests>=2.9.1->social-auth-core~=4.4->social-auth-app-django<6.0.0,>=5.0.0->djoser) (2.4.0)
+Requirement already satisfied: certifi>=2017.4.17 in ./venv/lib/python3.9/site-packages (from requests>=2.9.1->social-auth-core~=4.4->social-auth-app-django<6.0.0,>=5.0.0->djoser) (2025.4.26)
+Downloading djoser-2.3.1-py3-none-any.whl (64 kB)
+Downloading djangorestframework_simplejwt-5.5.0-py3-none-any.whl (103 kB)
+Downloading PyJWT-2.9.0-py3-none-any.whl (22 kB)
+Downloading social_auth_app_django-5.4.3-py3-none-any.whl (26 kB)
+Downloading django-4.2.21-py3-none-any.whl (8.0 MB)
+   ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━ 8.0/8.0 MB 6.6 MB/s eta 0:00:00
+Downloading djangorestframework-3.16.0-py3-none-any.whl (1.1 MB)
+   ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━ 1.1/1.1 MB 8.5 MB/s eta 0:00:00
+Installing collected packages: pyjwt, django, djangorestframework, social-auth-app-django, djangorestframework-simplejwt, djoser
+  Attempting uninstall: pyjwt
+    Found existing installation: PyJWT 2.10.1
+    Uninstalling PyJWT-2.10.1:
+      Successfully uninstalled PyJWT-2.10.1
+  Attempting uninstall: django
+    Found existing installation: Django 3.2.16
+    Uninstalling Django-3.2.16:
+      Successfully uninstalled Django-3.2.16
+  Attempting uninstall: djangorestframework
+    Found existing installation: djangorestframework 3.12.4
+    Uninstalling djangorestframework-3.12.4:
+      Successfully uninstalled djangorestframework-3.12.4
+  Attempting uninstall: social-auth-app-django
+    Found existing installation: social-auth-app-django 4.0.0
+    Uninstalling social-auth-app-django-4.0.0:
+      Successfully uninstalled social-auth-app-django-4.0.0
+  Attempting uninstall: djangorestframework-simplejwt
+    Found existing installation: djangorestframework-simplejwt 4.7.2
+    Uninstalling djangorestframework-simplejwt-4.7.2:
+      Successfully uninstalled djangorestframework-simplejwt-4.7.2
+  Attempting uninstall: djoser
+    Found existing installation: djoser 2.1.0
+    Uninstalling djoser-2.1.0:
+      Successfully uninstalled djoser-2.1.0
+
+Successfully installed django-4.2.21 djangorestframework-3.16.0 djangorestframework-simplejwt-5.5.0 djoser-2.3.1 pyjwt-2.9.0 social-auth-app-django-5.4.3
