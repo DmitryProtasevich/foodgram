@@ -68,10 +68,19 @@ class RecipeIngredient(models.Model):
     ingredient = models.ForeignKey(
         Ingredients, on_delete=models.CASCADE, related_name='ingredient_recipes'
     )
-    amount = models.PositiveIntegerField()
+    amount = models.PositiveIntegerField(
+        'Количество ингридиентов',
+        validators=(MinValueValidator(Constants.MIN_AMOUNT),)
+    )
 
     class Meta:
         unique_together = ('recipe', 'ingredient')
+        constraints = (
+            models.UniqueConstraint(
+                fields=('recipe', 'ingredient'),
+                name='unique_recipe_ingredient'
+            ),
+        )
 
 
 class Recipe(models.Model):
@@ -106,6 +115,7 @@ class Recipe(models.Model):
     )
     image = models.ImageField(
         'Изображение',
+        null=False
     )
     text = models.TextField('Описание')
     cooking_time = models.IntegerField(

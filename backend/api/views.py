@@ -2,10 +2,11 @@ from rest_framework.response import Response
 from rest_framework import filters, viewsets, pagination, status, permissions
 from django_filters.rest_framework import DjangoFilterBackend
 from rest_framework.decorators import action
+from django.utils.http import int_to_base36
 
 from django.contrib.auth import get_user_model
 
-# from .permissions import IsAuthorOrReadOnly
+from .permissions import IsAuthorOrAdminOrModeratorOrReadOnly
 from .serializers import (
     UserCreateSerializer,
     UserDetailSerializer,
@@ -105,26 +106,15 @@ class IngredientsViewSet(viewsets.ModelViewSet):
     serializer_class = IngredientsSerializer
     http_method_names = ('get',)
     pagination_class = None
+    filterset_fields = ('name',)
 
 
-# class RecipesViewSet(viewsets.ModelViewSet):
-#     queryset = Recipe.objects.all()
-#     pagination_class = pagination.LimitOffsetPagination
-#     filter_backends = (DjangoFilterBackend,)
-#     filterset_class = RecipesFilter
-
-#     # def perform_create(self, serializer):
-#     #     serializer.save(author=self.request.user)
-
-#     def get_serializer_class(self):
-#         if self.request.method in ['GET']:
-#             return RecipeReadSerializer
-#         return RecipeWriteSerializer
 class RecipesViewSet(viewsets.ModelViewSet):
     queryset = Recipe.objects.all()
     pagination_class = pagination.LimitOffsetPagination
     filter_backends = (DjangoFilterBackend,)
     filterset_class = RecipesFilter
+    permission_classes = (IsAuthorOrAdminOrModeratorOrReadOnly,)
 
     def get_serializer_class(self):
         if self.request.method == 'GET':
@@ -148,4 +138,35 @@ class RecipesViewSet(viewsets.ModelViewSet):
             read_serializer.data,
             status=status.HTTP_201_CREATED,
             headers=headers
+        )
+
+    def partial_update(self, request, *args, **kwargs):
+        """
+        Обрабатывает PATCH: валидирует через write-сериализатор,
+        сохраняет изменения и возвращает результат
+        через read-сериализатор.
+        """
+        instance = self.get_object()
+        write_serializer = self.get_serializer(
+            instance,
+            data=request.data,
+            partial=True
+        )
+        write_serializer.is_valid(raise_exception=True)
+        self.perform_update(write_serializer)
+        read_serializer = RecipeReadSerializer(
+            instance,
+            context=self.get_serializer_context()
+        )
+        return Response(
+            read_serializer.data,
+            status=status.HTTP_200_OK
+        )
+
+    @action(detail=True, methods=['get'], url_path='get-link')
+    def get_short_link(self, request, pk=None):
+        return Response(
+            {'short-link': request.build_absolute_uri(
+                f'/s/{int_to_base36(self.get_object().id)}'
+            )}
         )

@@ -2,7 +2,7 @@ class Constants:
     """Класс для хранения констант."""
 
     MAX_TITLE_LENGTH = 20
-    MIN_TIME = 1
+    MIN_TIME = MIN_AMOUNT = 1
     MAX_NAME_LENGHTH = 256
     MAX_TAG_NAME_LENGHTH = 32
     MAX_INGREDIENT_NAME_LENGHTH = 128
