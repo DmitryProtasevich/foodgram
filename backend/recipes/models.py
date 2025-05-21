@@ -1,8 +1,8 @@
-from django.db import models
+from django.conf import settings
 from django.core.validators import MinValueValidator
+from django.db import models
 
 from recipes.constants import Constants
-from django.conf import settings
 
 
 class Ingredients(models.Model):
@@ -66,7 +66,9 @@ class RecipeIngredient(models.Model):
         'Recipe', on_delete=models.CASCADE, related_name='recipe_ingredients'
     )
     ingredient = models.ForeignKey(
-        Ingredients, on_delete=models.CASCADE, related_name='ingredient_recipes'
+        Ingredients,
+        on_delete=models.CASCADE,
+        related_name='ingredient_recipes'
     )
     amount = models.PositiveIntegerField(
         'Количество ингридиентов',
@@ -92,7 +94,8 @@ class Recipe(models.Model):
     )
     author = models.ForeignKey(
         settings.AUTH_USER_MODEL, on_delete=models.CASCADE,
-        verbose_name='Автор'
+        verbose_name='Автор',
+        related_name='recipes'
     )
     ingredients = models.ManyToManyField(
         Ingredients,
@@ -132,4 +135,96 @@ class Recipe(models.Model):
         return (
             (self.name[:Constants.MAX_TITLE_LENGTH] + '...')
             if len(self.name) > Constants.MAX_TITLE_LENGTH else self.name
+        )
+
+
+class Follow(models.Model):
+    user = models.ForeignKey(
+        settings.AUTH_USER_MODEL,
+        on_delete=models.CASCADE,
+        related_name='subscriptions',
+        verbose_name='Подписчик'
+    )
+    following = models.ForeignKey(
+        settings.AUTH_USER_MODEL,
+        on_delete=models.CASCADE,
+        related_name='subscribers',
+        verbose_name='Подписки'
+    )
+
+    class Meta:
+        verbose_name = 'Подписка'
+        verbose_name_plural = 'Подписки'
+        constraints = [
+            models.UniqueConstraint(
+                name='unique_user_following',
+                fields=['user', 'following']
+            ),
+            models.CheckConstraint(
+                name='prevent_self_follow',
+                check=~models.Q(user=models.F('following')),
+            ),
+        ]
+
+    def __str__(self):
+        return f'{self.user} подписан на {self.following}'
+
+
+class ShoppingCart(models.Model):
+    user = models.ForeignKey(
+        settings.AUTH_USER_MODEL,
+        on_delete=models.CASCADE,
+        verbose_name='Пользователь',
+        related_name='cart_items',
+        null=True,
+        blank=True
+    )
+    recipe = models.ForeignKey(
+        Recipe,
+        on_delete=models.CASCADE,
+        related_name='in_carts',
+        blank=True,
+        null=True
+    )
+
+    class Meta:
+        verbose_name = 'список покупок'
+        verbose_name_plural = 'Списки покупок'
+        ordering = ('recipe__name',)
+        unique_together = ('user', 'recipe')
+
+    def __str__(self):
+        return (
+            (self.recipe[:Constants.MAX_TITLE_LENGTH] + '...')
+            if len(self.recipe) > Constants.MAX_TITLE_LENGTH else self.recipe
+        )
+
+
+class Favorite(models.Model):
+    user = models.ForeignKey(
+        settings.AUTH_USER_MODEL,
+        on_delete=models.CASCADE,
+        verbose_name='Пользователь',
+        related_name='favorite_items',
+        null=True,
+        blank=True
+    )
+    recipe = models.ForeignKey(
+        Recipe,
+        on_delete=models.CASCADE,
+        related_name='in_favorite',
+        blank=True,
+        null=True
+    )
+
+    class Meta:
+        verbose_name = 'покупка в избранном'
+        verbose_name_plural = 'Покупки в избранном'
+        ordering = ('recipe__name',)
+        unique_together = ('user', 'recipe')
+
+    def __str__(self):
+        return (
+            (self.recipe[:Constants.MAX_TITLE_LENGTH] + '...')
+            if len(self.recipe) > Constants.MAX_TITLE_LENGTH else self.recipe
         )
