@@ -10,39 +10,25 @@ class RecipesFilter(rest_framework.FilterSet):
         queryset=Tag.objects.all(),
     )
     author = rest_framework.NumberFilter(
-        field_name='author__id',
+        field_name='author',
     )
-    is_favorited = rest_framework.BooleanFilter(
-        method='filter_is_favorited'
-    )
-    is_in_shopping_cart = rest_framework.BooleanFilter(
-        method='filter_is_in_shopping_cart'
-    )
+    is_favorited = rest_framework.BooleanFilter(method='filter_by_favorites')
+    is_in_shopping_cart = rest_framework.BooleanFilter(method='filter_by_shopping_list')
 
     class Meta:
         model = Recipe
         fields = ()
 
-    def filter_is_favorited(self, queryset, name, value):
+    def _filter_by_user_relation(self, queryset, value, relation):
         user = self.request.user
         if not user.is_authenticated:
             return queryset.none() if value else queryset
-        if value:
-            return queryset.filter(
-                id__in=user.favorites.values_list('id', flat=True)
-            )
-        return queryset.exclude(
-            id__in=user.favorites.values_list('id', flat=True)
-        )
+        
+        ids = getattr(user, relation).values_list('id', flat=True)
+        return queryset.filter(id__in=ids) if value else queryset.exclude(id__in=ids)
 
-    def filter_is_in_shopping_cart(self, queryset, name, value):
-        user = self.request.user
-        if not user.is_authenticated:
-            return queryset.none() if value else queryset
-        if value:
-            return queryset.filter(
-                id__in=user.shopping_list.values_list('id', flat=True)
-            )
-        return queryset.exclude(
-            id__in=user.shopping_list.values_list('id', flat=True)
-        )
+    def filter_by_favorites(self, queryset, name, value):
+        return self._filter_by_user_relation(queryset, value, 'favorites')
+
+    def filter_by_shopping_list(self, queryset, name, value):
+        return self._filter_by_user_relation(queryset, value, 'shopping_list')

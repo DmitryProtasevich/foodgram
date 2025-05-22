@@ -156,35 +156,57 @@ class RecipeWriteSerializer(serializers.ModelSerializer):
             'id', 'tags', 'ingredients', 'image', 'name',
             'text', 'cooking_time',
         )
+        # validators = (
+        #     validators.UniqueTogetherValidator(
+        #         queryset=Recipe.objects.all(),
+        #         fields=('user', 'following'),
+        #         message='Вы уже подписаны на этого пользователя.'
+        #     ),
+        # )
 
-    def validate(self, attrs):
-        ingredient_ids = set()
-        tag_ids = set()
-        ingredients = attrs.get('ingredients')
+    def validate_ingredients(self, ingredients):
         if not ingredients:
             raise serializers.ValidationError(
-                {'ingredients': 'Поле не может быть пустым!'})
+                'Поле не может быть пустым!'
+            )
+        ingredient_ids = set()
         for item in ingredients:
             ing_id = item.get('id')
             if not Ingredients.objects.filter(id=ing_id).exists():
                 raise serializers.ValidationError(
-                    {'ingredients': f'Ингредиент с id={ing_id} не найден!'})
+                    f'Ингредиент с id={ing_id} не найден!'
+                )
             if ing_id in ingredient_ids:
                 raise serializers.ValidationError(
-                    {'ingredients': 'Ингредиенты не должны повторяться!'})
+                    'Ингредиенты не должны повторяться!'
+                )
             ingredient_ids.add(ing_id)
-        tags = attrs.get('tags')
+        return ingredients
+
+    def validate_tags(self, tags):
         if not tags:
             raise serializers.ValidationError(
-                {'tags': 'Нужно выбрать хотя бы один тег!'})
+                'Нужно выбрать хотя бы один тег!'
+            )
+        tag_ids = set()
         for tag_id in tags:
             if tag_id in tag_ids:
                 raise serializers.ValidationError(
-                    {'tags': 'Теги не должны повторяться!'})
+                    'Теги не должны повторяться!'
+                )
             tag_ids.add(tag_id)
-        if not attrs.get('image'):
+        return tags
+
+    def validate_image(self, image):
+        if not image:
             raise serializers.ValidationError(
-                {'image': 'Нужно загрузить изображение!'})
+                'Нужно загрузить изображение!'
+            )
+        return image
+
+    def validate(self, attrs):
+        attrs['ingredients'] = self.validate_ingredients(attrs.get('ingredients'))
+        attrs['tags'] = self.validate_tags(attrs.get('tags'))
         return attrs
 
     def create(self, data, **kwargs):
