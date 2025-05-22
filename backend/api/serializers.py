@@ -25,8 +25,7 @@ class UserCreateSerializer(serializers.ModelSerializer):
 
     def create(self, validated_data):
         password = validated_data.pop('password')
-        user = User.objects.create_user(**validated_data, password=password)
-        return user
+        return User.objects.create_user(**validated_data, password=password)
 
 
 class UserDetailSerializer(serializers.ModelSerializer):
@@ -65,22 +64,21 @@ class SetPasswordSerializer(serializers.Serializer):
     current_password = serializers.CharField(required=True)
 
     def validate_current_password(self, value):
-        user = self.context['request'].user
-        if not user.check_password(value):
-            raise serializers.ValidationError("Текущий пароль неверен")
+        if not self.context['request'].user.check_password(value):
+            raise serializers.ValidationError('Пароль не верен.')
         return value
 
 
 class TagsSerializer(serializers.ModelSerializer):
     class Meta:
         model = Tag
-        fields = ('id', 'name', 'slug')
+        fields = '__all__'
 
 
 class IngredientsSerializer(serializers.ModelSerializer):
     class Meta:
         model = Ingredients
-        fields = ('id', 'name', 'measurement_unit')
+        fields = fields = '__all__'
 
 
 class RecipeIngredientSerializer(serializers.ModelSerializer):
@@ -135,7 +133,7 @@ class RecipeIngredientWriteSerializer(serializers.Serializer):
         min_value=Constants.MIN_AMOUNT,
         error_messages={
             'min_value':
-                f"Количество не может быть меньше {Constants.MIN_AMOUNT}."
+                f'Количество не может быть меньше {Constants.MIN_AMOUNT}.'
         }
     )
 
@@ -195,7 +193,8 @@ class RecipeWriteSerializer(serializers.ModelSerializer):
         return image
 
     def validate(self, attrs):
-        attrs['ingredients'] = self.validate_ingredients(attrs.get('ingredients'))
+        attrs['ingredients'
+              ] = self.validate_ingredients(attrs.get('ingredients'))
         attrs['tags'] = self.validate_tags(attrs.get('tags'))
         return attrs
 
@@ -261,7 +260,7 @@ class SubscriptionSerializer(UserDetailSerializer):
         return obj.recipes.count()
 
     def get_avatar(self, obj):
-        request = self.context.get('request')
         if obj.avatar:
-            return request.build_absolute_uri(obj.avatar.url)
+            return self.context.get('request'
+                                    ).build_absolute_uri(obj.avatar.url)
         return None
