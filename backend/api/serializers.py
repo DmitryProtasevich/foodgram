@@ -84,19 +84,16 @@ class IngredientsSerializer(serializers.ModelSerializer):
 
 
 class RecipeIngredientSerializer(serializers.ModelSerializer):
+    id = serializers.ReadOnlyField(source='ingredient.id')
+    name = serializers.ReadOnlyField(source='ingredient.name')
+    measurement_unit = serializers.ReadOnlyField(
+        source='ingredient.measurement_unit'
+    )
     amount = serializers.IntegerField()
 
     class Meta:
         model = RecipeIngredient
         fields = ('id', 'name', 'measurement_unit', 'amount')
-
-    def to_representation(self, instance):
-        return {
-            'id': instance.ingredient.id,
-            'name': instance.ingredient.name,
-            'measurement_unit': instance.ingredient.measurement_unit,
-            'amount': instance.amount,
-        }
 
 
 class RecipeShortSerializer(serializers.ModelSerializer):
@@ -156,13 +153,6 @@ class RecipeWriteSerializer(serializers.ModelSerializer):
             'id', 'tags', 'ingredients', 'image', 'name',
             'text', 'cooking_time',
         )
-        # validators = (
-        #     validators.UniqueTogetherValidator(
-        #         queryset=Recipe.objects.all(),
-        #         fields=('user', 'following'),
-        #         message='Вы уже подписаны на этого пользователя.'
-        #     ),
-        # )
 
     def validate_ingredients(self, ingredients):
         if not ingredients:
