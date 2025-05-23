@@ -9,6 +9,8 @@ User = get_user_model()
 
 
 class UserCreateSerializer(serializers.ModelSerializer):
+    """Сериализатор для создания пользователей."""
+
     password = serializers.CharField(write_only=True)
 
     class Meta:
@@ -29,6 +31,8 @@ class UserCreateSerializer(serializers.ModelSerializer):
 
 
 class UserDetailSerializer(serializers.ModelSerializer):
+    """Сериализатор для просмотра пользователей."""
+
     is_subscribed = serializers.SerializerMethodField()
     avatar = Base64ImageField(use_url=True)
 
@@ -52,6 +56,8 @@ class UserDetailSerializer(serializers.ModelSerializer):
 
 
 class AvatarSerializer(serializers.ModelSerializer):
+    """Сериализатор для аватара."""
+
     avatar = Base64ImageField(use_url=True, required=True)
 
     class Meta:
@@ -60,6 +66,8 @@ class AvatarSerializer(serializers.ModelSerializer):
 
 
 class SetPasswordSerializer(serializers.Serializer):
+    """Сериализатор для изменения пароля."""
+
     new_password = serializers.CharField(required=True)
     current_password = serializers.CharField(required=True)
 
@@ -70,18 +78,24 @@ class SetPasswordSerializer(serializers.Serializer):
 
 
 class TagsSerializer(serializers.ModelSerializer):
+    """Сериализатор для тегов."""
+
     class Meta:
         model = Tag
         fields = '__all__'
 
 
 class IngredientsSerializer(serializers.ModelSerializer):
+    """Сериализатор для ингредиентов."""
+
     class Meta:
         model = Ingredients
         fields = fields = '__all__'
 
 
-class RecipeIngredientSerializer(serializers.ModelSerializer):
+class RecipeIngredientReadSerializer(serializers.ModelSerializer):
+    """Сериализатор для чтения ингредиентов рецепта."""
+
     id = serializers.ReadOnlyField(source='ingredient.id')
     name = serializers.ReadOnlyField(source='ingredient.name')
     measurement_unit = serializers.ReadOnlyField(
@@ -94,17 +108,34 @@ class RecipeIngredientSerializer(serializers.ModelSerializer):
         fields = ('id', 'name', 'measurement_unit', 'amount')
 
 
+class RecipeIngredientWriteSerializer(serializers.Serializer):
+    """Сериализатор для создания ингредиентов рецепта."""
+
+    id = serializers.IntegerField()
+    amount = serializers.IntegerField(
+        min_value=Constants.MIN_AMOUNT,
+        error_messages={
+            'min_value':
+                f'Количество не может быть меньше {Constants.MIN_AMOUNT}.'
+        }
+    )
+
+
 class RecipeShortSerializer(serializers.ModelSerializer):
+    """Сериализатор для коротких рецептов."""
+
     class Meta:
         model = Recipe
         fields = ('id', 'name', 'image', 'cooking_time')
 
 
 class RecipeReadSerializer(serializers.ModelSerializer):
+    """Сериализатор для чтения рецептов."""
+
     is_favorited = serializers.SerializerMethodField()
     is_in_shopping_cart = serializers.SerializerMethodField()
     tags = TagsSerializer(many=True, read_only=True)
-    ingredients = RecipeIngredientSerializer(
+    ingredients = RecipeIngredientReadSerializer(
         source='recipe_ingredients', many=True, read_only=True
     )
     author = UserDetailSerializer(read_only=True)
@@ -127,18 +158,9 @@ class RecipeReadSerializer(serializers.ModelSerializer):
         return user.is_authenticated and obj in user.shopping_list.all()
 
 
-class RecipeIngredientWriteSerializer(serializers.Serializer):
-    id = serializers.IntegerField()
-    amount = serializers.IntegerField(
-        min_value=Constants.MIN_AMOUNT,
-        error_messages={
-            'min_value':
-                f'Количество не может быть меньше {Constants.MIN_AMOUNT}.'
-        }
-    )
-
-
 class RecipeWriteSerializer(serializers.ModelSerializer):
+    """Сериализатор для создания и редактирования рецептов."""
+
     ingredients = RecipeIngredientWriteSerializer(many=True, write_only=True)
     tags = serializers.PrimaryKeyRelatedField(
         many=True, queryset=Tag.objects.all()
@@ -235,6 +257,8 @@ class RecipeWriteSerializer(serializers.ModelSerializer):
 
 
 class SubscriptionSerializer(UserDetailSerializer):
+    """Сериализатор для подписок."""
+
     recipes = serializers.SerializerMethodField()
     recipes_count = serializers.SerializerMethodField()
     avatar = serializers.SerializerMethodField()

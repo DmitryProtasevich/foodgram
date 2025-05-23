@@ -5,6 +5,36 @@ from django.db import models
 from recipes.constants import Constants
 
 
+class AbstractUserRecipe(models.Model):
+    """Абстрактная модель для хранения пользователя и рецепта."""
+
+    user = models.ForeignKey(
+        settings.AUTH_USER_MODEL,
+        on_delete=models.CASCADE,
+        verbose_name='Пользователь',
+        null=True,
+        blank=True
+    )
+    recipe = models.ForeignKey(
+        'Recipe',
+        on_delete=models.CASCADE,
+        verbose_name='Рецепт',
+        blank=True,
+        null=True
+    )
+
+    class Meta:
+        abstract = True
+        ordering = ('recipe__name',)
+        unique_together = ('user', 'recipe')
+
+    def __str__(self):
+        return (
+            (self.recipe[:Constants.MAX_TITLE_LENGTH] + '...')
+            if len(self.recipe) > Constants.MAX_TITLE_LENGTH else self.recipe
+        )
+
+
 class Ingredients(models.Model):
     """Модель для ингридиентов."""
     name = models.CharField(
@@ -162,61 +192,19 @@ class Follow(models.Model):
         return f'{self.user} подписан на {self.following}'
 
 
-class ShoppingCart(models.Model):
-    user = models.ForeignKey(
-        settings.AUTH_USER_MODEL,
-        on_delete=models.CASCADE,
-        verbose_name='Пользователь',
-        related_name='cart_items',
-        null=True,
-        blank=True
-    )
-    recipe = models.ForeignKey(
-        Recipe,
-        on_delete=models.CASCADE,
-        related_name='in_carts',
-        blank=True,
-        null=True
-    )
+class ShoppingCart(AbstractUserRecipe):
+    """Модель для списка покупок."""
 
-    class Meta:
+    class Meta(AbstractUserRecipe.Meta):
         verbose_name = 'список покупок'
         verbose_name_plural = 'Списки покупок'
-        ordering = ('recipe__name',)
-        unique_together = ('user', 'recipe')
-
-    def __str__(self):
-        return (
-            (self.recipe[:Constants.MAX_TITLE_LENGTH] + '...')
-            if len(self.recipe) > Constants.MAX_TITLE_LENGTH else self.recipe
-        )
+        default_related_name = 'shopping_cart'
 
 
-class Favorite(models.Model):
-    user = models.ForeignKey(
-        settings.AUTH_USER_MODEL,
-        on_delete=models.CASCADE,
-        verbose_name='Пользователь',
-        related_name='favorite_items',
-        null=True,
-        blank=True
-    )
-    recipe = models.ForeignKey(
-        Recipe,
-        on_delete=models.CASCADE,
-        related_name='in_favorite',
-        blank=True,
-        null=True
-    )
+class Favorite(AbstractUserRecipe):
+    """Модель для избранного."""
 
-    class Meta:
-        verbose_name = 'покупка в избранном'
-        verbose_name_plural = 'Покупки в избранном'
-        ordering = ('recipe__name',)
-        unique_together = ('user', 'recipe')
-
-    def __str__(self):
-        return (
-            (self.recipe[:Constants.MAX_TITLE_LENGTH] + '...')
-            if len(self.recipe) > Constants.MAX_TITLE_LENGTH else self.recipe
-        )
+    class Meta(AbstractUserRecipe.Meta):
+        verbose_name = 'рецепт в избранном'
+        verbose_name_plural = 'Рецепты в избранном'
+        default_related_name = 'favorite'
