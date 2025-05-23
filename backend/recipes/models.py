@@ -6,64 +6,71 @@ from recipes.constants import Constants
 
 
 class AbstractUserRecipe(models.Model):
-    """Абстрактная модель для хранения пользователя и рецепта."""
+    """Абстрактная модель для пользователя и рецепта."""
 
     user = models.ForeignKey(
         settings.AUTH_USER_MODEL,
         on_delete=models.CASCADE,
         verbose_name='Пользователь',
-        null=True,
-        blank=True
     )
     recipe = models.ForeignKey(
         'Recipe',
         on_delete=models.CASCADE,
         verbose_name='Рецепт',
-        blank=True,
-        null=True
     )
 
     class Meta:
         abstract = True
         ordering = ('recipe__name',)
-        unique_together = ('user', 'recipe')
+        constraints = [
+            models.UniqueConstraint(
+                fields=('user', 'recipe'),
+                name='%(app_label)s_%(class)s_unique_user_recipe'
+            )
+        ]
 
     def __str__(self):
-        return (
-            (self.recipe[:Constants.MAX_TITLE_LENGTH] + '...')
-            if len(self.recipe) > Constants.MAX_TITLE_LENGTH else self.recipe
-        )
+        if self.recipe and len(self.recipe.name) > Constants.MAX_TITLE_LENGTH:
+            return f'{self.recipe.name[:Constants.MAX_TITLE_LENGTH]}...'
+        return self.recipe.name if self.recipe else ''
 
 
-class Ingredients(models.Model):
-    """Модель для ингридиентов."""
+class AbstractTitle(models.Model):
+    """Абстрактная модель для строкового представления и сортировки."""
+
+    class Meta:
+        abstract = True
+        ordering = ('name',)
+
+    def __str__(self):
+        if len(self.name) > Constants.MAX_TITLE_LENGTH:
+            return f'{self.name[:Constants.MAX_TITLE_LENGTH]}...'
+        return self.name
+
+
+class Ingredients(AbstractTitle):
+    """Модель для ингредиентов."""
+
     name = models.CharField(
         'Название',
         max_length=Constants.MAX_INGREDIENT_NAME_LENGHTH,
         db_index=True,
-        blank=True
     )
     measurement_unit = models.CharField(
         'Единицы измерения',
         max_length=Constants.MAX_INGREDIENT_MEASUREMENT_LENGHTH,
-        db_index=True,
         blank=True
     )
 
-    class Meta:
-        verbose_name = 'ингридиент'
-        verbose_name_plural = 'Ингридиенты'
-        ordering = ('name',)
-
-    def __str__(self):
-        return (
-            (self.name[:Constants.MAX_TITLE_LENGTH] + '...')
-            if len(self.name) > Constants.MAX_TITLE_LENGTH else self.name
-        )
+    class Meta(AbstractTitle.Meta):
+        verbose_name = 'ингредиент'
+        verbose_name_plural = 'Ингредиенты'
+        default_related_name = 'ingredient'
 
 
-class Tag(models.Model):
+class Tag(AbstractTitle):
     """Модель для тегов."""
+
     name = models.CharField(
         'Название',
         unique=True,
@@ -79,34 +86,30 @@ class Tag(models.Model):
         blank=True
     )
 
-    class Meta:
+    class Meta(AbstractTitle.Meta):
         verbose_name = 'тег'
         verbose_name_plural = 'Теги'
-        ordering = ('name',)
-
-    def __str__(self):
-        return (
-            (self.name[:Constants.MAX_TITLE_LENGTH] + '...')
-            if len(self.name) > Constants.MAX_TITLE_LENGTH else self.name
-        )
+        default_related_name = 'tag'
 
 
 class RecipeIngredient(models.Model):
+    """Модель для ингредиентов рецепта."""
+
     recipe = models.ForeignKey(
-        'Recipe', on_delete=models.CASCADE, related_name='recipe_ingredients'
+        'Recipe',
+        on_delete=models.CASCADE
     )
     ingredient = models.ForeignKey(
         Ingredients,
         on_delete=models.CASCADE,
-        related_name='ingredient_recipes'
     )
     amount = models.PositiveIntegerField(
-        'Количество ингридиентов',
+        'Количество ингредиентов',
         validators=(MinValueValidator(Constants.MIN_AMOUNT),)
     )
 
     class Meta:
-        unique_together = ('recipe', 'ingredient')
+        default_related_name = 'recipe_ingredients'
         constraints = (
             models.UniqueConstraint(
                 fields=('recipe', 'ingredient'),
@@ -115,8 +118,9 @@ class RecipeIngredient(models.Model):
         )
 
 
-class Recipe(models.Model):
+class Recipe(AbstractTitle):
     """Модель для рецептов."""
+
     tags = models.ManyToManyField(
         Tag,
         related_name='recipes',
@@ -125,13 +129,11 @@ class Recipe(models.Model):
     author = models.ForeignKey(
         settings.AUTH_USER_MODEL, on_delete=models.CASCADE,
         verbose_name='Автор',
-        related_name='recipes'
     )
     ingredients = models.ManyToManyField(
         Ingredients,
         through='RecipeIngredient',
-        related_name='recipes',
-        verbose_name='Ингридиенты рецепта'
+        verbose_name='Ингредиенты рецепта'
     )
     name = models.CharField(
         'Название',
@@ -148,19 +150,15 @@ class Recipe(models.Model):
         validators=[MinValueValidator(Constants.MIN_TIME)],
     )
 
-    class Meta:
+    class Meta(AbstractTitle.Meta):
         verbose_name = 'рецепт'
         verbose_name_plural = 'Рецепты'
-        ordering = ('name',)
-
-    def __str__(self):
-        return (
-            (self.name[:Constants.MAX_TITLE_LENGTH] + '...')
-            if len(self.name) > Constants.MAX_TITLE_LENGTH else self.name
-        )
+        default_related_name = 'recipes'
 
 
 class Follow(models.Model):
+    """Модель для подписок."""
+
     user = models.ForeignKey(
         settings.AUTH_USER_MODEL,
         on_delete=models.CASCADE,
@@ -175,7 +173,7 @@ class Follow(models.Model):
     )
 
     class Meta:
-        verbose_name = 'Подписка'
+        verbose_name = 'подписка'
         verbose_name_plural = 'Подписки'
         constraints = [
             models.UniqueConstraint(
