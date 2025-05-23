@@ -22,12 +22,12 @@ class AbstractUserRecipe(models.Model):
     class Meta:
         abstract = True
         ordering = ('recipe__name',)
-        constraints = [
+        constraints = (
             models.UniqueConstraint(
                 fields=('user', 'recipe'),
                 name='%(app_label)s_%(class)s_unique_user_recipe'
-            )
-        ]
+            ),
+        )
 
     def __str__(self):
         if self.recipe and len(self.recipe.name) > Constants.MAX_TITLE_LENGTH:
@@ -147,7 +147,7 @@ class Recipe(AbstractTitle):
     text = models.TextField('Описание')
     cooking_time = models.IntegerField(
         'Время приготовления (в минутах)',
-        validators=[MinValueValidator(Constants.MIN_TIME)],
+        validators=(MinValueValidator(Constants.MIN_TIME),),
     )
 
     class Meta(AbstractTitle.Meta):
@@ -175,16 +175,16 @@ class Follow(models.Model):
     class Meta:
         verbose_name = 'подписка'
         verbose_name_plural = 'Подписки'
-        constraints = [
+        constraints = (
             models.UniqueConstraint(
                 name='unique_user_following',
-                fields=['user', 'following']
+                fields=('user', 'following')
             ),
             models.CheckConstraint(
                 name='prevent_self_follow',
                 check=~models.Q(user=models.F('following')),
             ),
-        ]
+        )
 
     def __str__(self):
         return f'{self.user} подписан на {self.following}'

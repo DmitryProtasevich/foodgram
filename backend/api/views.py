@@ -69,6 +69,7 @@ class UserViewSet(viewsets.ModelViewSet):
             user.avatar = None
             user.save()
         return Response(status=status.HTTP_204_NO_CONTENT)
+    
     @action(
         detail=False,
         methods=['post'],
