@@ -57,14 +57,14 @@ class User(AbstractUser):
         Recipe,
         verbose_name='Избранное',
         through='recipes.Favorite',
-        related_name='favorited_by',
+        related_name='favorite_recipes',
         blank=True
     )
     shopping_list = models.ManyToManyField(
         Recipe,
         verbose_name='Список покупок',
         through='recipes.ShoppingCart',
-        related_name='shopping_list_users',
+        related_name='shopping_carts',
         blank=True
     )
     avatar = models.ImageField(

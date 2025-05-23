@@ -203,7 +203,6 @@ class ShoppingCart(AbstractUserRecipe):
     class Meta(AbstractUserRecipe.Meta):
         verbose_name = 'список покупок'
         verbose_name_plural = 'Списки покупок'
-        default_related_name = 'shopping_carts'
 
 
 class Favorite(AbstractUserRecipe):
@@ -212,4 +211,3 @@ class Favorite(AbstractUserRecipe):
     class Meta(AbstractUserRecipe.Meta):
         verbose_name = 'рецепт в избранном'
         verbose_name_plural = 'Рецепты в избранном'
-        default_related_name = 'favorite_recipes'
