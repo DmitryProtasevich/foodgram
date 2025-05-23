@@ -8,7 +8,7 @@ from rest_framework import filters, pagination, permissions, status, viewsets
 from rest_framework.decorators import action
 from rest_framework.response import Response
 
-from recipes.models import (Follow, Ingredients, Recipe, RecipeIngredient,
+from recipes.models import (Follow, Ingredient, Recipe, RecipeIngredient,
                             ShoppingCart, Tag)
 
 from .filters import RecipesFilter
@@ -172,7 +172,7 @@ class TagsViewSet(viewsets.ModelViewSet):
 
 
 class IngredientsViewSet(viewsets.ModelViewSet):
-    queryset = Ingredients.objects.all()
+    queryset = Ingredient.objects.all()
     serializer_class = IngredientsSerializer
     http_method_names = ('get',)
     pagination_class = None

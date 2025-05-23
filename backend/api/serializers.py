@@ -3,7 +3,7 @@ from drf_extra_fields.fields import Base64ImageField
 from rest_framework import serializers
 
 from recipes.constants import Constants
-from recipes.models import Ingredients, Recipe, RecipeIngredient, Tag
+from recipes.models import Ingredient, Recipe, RecipeIngredient, Tag
 
 User = get_user_model()
 
@@ -89,7 +89,7 @@ class IngredientsSerializer(serializers.ModelSerializer):
     """Сериализатор для ингредиентов."""
 
     class Meta:
-        model = Ingredients
+        model = Ingredient
         fields = fields = '__all__'
 
 
@@ -182,7 +182,7 @@ class RecipeWriteSerializer(serializers.ModelSerializer):
         ingredient_ids = set()
         for item in ingredients:
             ing_id = item.get('id')
-            if not Ingredients.objects.filter(id=ing_id).exists():
+            if not Ingredient.objects.filter(id=ing_id).exists():
                 raise serializers.ValidationError(
                     f'Ингредиент с id={ing_id} не найден!'
                 )

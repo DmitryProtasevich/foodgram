@@ -48,7 +48,7 @@ class AbstractTitle(models.Model):
         return self.name
 
 
-class Ingredients(AbstractTitle):
+class Ingredient(AbstractTitle):
     """Модель для ингредиентов."""
 
     name = models.CharField(
@@ -65,7 +65,7 @@ class Ingredients(AbstractTitle):
     class Meta(AbstractTitle.Meta):
         verbose_name = 'ингредиент'
         verbose_name_plural = 'Ингредиенты'
-        default_related_name = 'ingredient'
+        default_related_name = 'ingredients'
 
 
 class Tag(AbstractTitle):
@@ -76,20 +76,20 @@ class Tag(AbstractTitle):
         unique=True,
         max_length=Constants.MAX_TAG_NAME_LENGHTH,
         db_index=True,
-        blank=True
     )
     slug = models.SlugField(
         'Слаг',
         unique=True,
         max_length=Constants.MAX_TAG_NAME_LENGHTH,
         db_index=True,
-        blank=True
+        blank=True,
+        null=True
     )
 
     class Meta(AbstractTitle.Meta):
         verbose_name = 'тег'
         verbose_name_plural = 'Теги'
-        default_related_name = 'tag'
+        default_related_name = 'tags'
 
 
 class RecipeIngredient(models.Model):
@@ -100,7 +100,7 @@ class RecipeIngredient(models.Model):
         on_delete=models.CASCADE
     )
     ingredient = models.ForeignKey(
-        Ingredients,
+        Ingredient,
         on_delete=models.CASCADE,
     )
     amount = models.PositiveIntegerField(
@@ -117,6 +117,12 @@ class RecipeIngredient(models.Model):
             ),
         )
 
+    def __str__(self):
+        return (
+            f'{self.ingredient.name} — {self.amount} '
+            f'{self.ingredient.measurement_unit or ""}'.strip()
+        )
+
 
 class Recipe(AbstractTitle):
     """Модель для рецептов."""
@@ -131,7 +137,7 @@ class Recipe(AbstractTitle):
         verbose_name='Автор',
     )
     ingredients = models.ManyToManyField(
-        Ingredients,
+        Ingredient,
         through='RecipeIngredient',
         verbose_name='Ингредиенты рецепта'
     )
@@ -142,6 +148,7 @@ class Recipe(AbstractTitle):
     )
     image = models.ImageField(
         'Изображение',
+        upload_to='recipes/%Y/%m/%d/',
         null=False
     )
     text = models.TextField('Описание')
@@ -196,7 +203,7 @@ class ShoppingCart(AbstractUserRecipe):
     class Meta(AbstractUserRecipe.Meta):
         verbose_name = 'список покупок'
         verbose_name_plural = 'Списки покупок'
-        default_related_name = 'shopping_cart'
+        default_related_name = 'shopping_carts'
 
 
 class Favorite(AbstractUserRecipe):
@@ -205,4 +212,4 @@ class Favorite(AbstractUserRecipe):
     class Meta(AbstractUserRecipe.Meta):
         verbose_name = 'рецепт в избранном'
         verbose_name_plural = 'Рецепты в избранном'
-        default_related_name = 'favorite'
+        default_related_name = 'favorite_recipes'
