@@ -215,42 +215,59 @@ class RecipesViewSet(viewsets.ModelViewSet):
             return RecipeReadSerializer
         return RecipeWriteSerializer
 
-    def perform_create(self, serializer):
-        serializer.save(author=self.request.user)
+    def list(self, request, *args, **kwargs):
+        qs = self.filter_queryset(self.get_queryset())
+        page = self.paginate_queryset(qs)
+        data = RecipeReadSerializer(page, many=True, context={'request': request}).data
+        if request.user.is_authenticated:
+            fav_ids = set(request.user.favorites.values_list('id', flat=True))
+            cart_ids = set(request.user.shopping_list.values_list('id', flat=True))
+        else:
+            fav_ids = cart_ids = set()
+        for item in data:
+            item['is_favorited'] = item['id'] in fav_ids
+            item['is_in_shopping_cart'] = item['id'] in cart_ids
+
+        return self.get_paginated_response(data)
+
+    def retrieve(self, request, *args, **kwargs):
+        inst = self.get_object()
+        data = RecipeReadSerializer(inst, context={'request': request}).data
+        if request.user.is_authenticated:
+            fav_ids = set(request.user.favorites.values_list('id', flat=True))
+            cart_ids = set(request.user.shopping_list.values_list('id', flat=True))
+        else:
+            fav_ids = cart_ids = set()
+        data['is_favorited'] = inst.id in fav_ids
+        data['is_in_shopping_cart'] = inst.id in cart_ids
+        return Response(data)
 
     def create(self, request, *args, **kwargs):
-        write_serializer = self.get_serializer(data=request.data)
-        write_serializer.is_valid(raise_exception=True)
-        self.perform_create(write_serializer)
-        recipe = write_serializer.instance
-        read_serializer = RecipeReadSerializer(
-            recipe,
-            context=self.get_serializer_context()
-        )
-        headers = self.get_success_headers(read_serializer.data)
-        return Response(
-            read_serializer.data,
-            status=status.HTTP_201_CREATED,
-            headers=headers
-        )
+        ws = self.get_serializer(data=request.data)
+        ws.is_valid(raise_exception=True)
+        recipe = ws.save(author=request.user)
+        data = RecipeReadSerializer(recipe, context={'request': request}).data
+        data['is_favorited'] = False
+        data['is_in_shopping_cart'] = False
+        headers = self.get_success_headers(data)
+        return Response(data, status=status.HTTP_201_CREATED, headers=headers)
 
     def partial_update(self, request, *args, **kwargs):
-        instance = self.get_object()
-        write_serializer = self.get_serializer(
-            instance,
-            data=request.data,
-            partial=True
-        )
-        write_serializer.is_valid(raise_exception=True)
-        self.perform_update(write_serializer)
-        read_serializer = RecipeReadSerializer(
-            instance,
-            context=self.get_serializer_context()
-        )
-        return Response(
-            read_serializer.data,
-            status=status.HTTP_200_OK
-        )
+        inst = self.get_object()
+        ws = self.get_serializer(inst, data=request.data, partial=True)
+        ws.is_valid(raise_exception=True)
+        ws.save()
+
+        data = RecipeReadSerializer(inst, context={'request': request}).data
+        if request.user.is_authenticated:
+            fav_ids = set(request.user.favorites.values_list('id', flat=True))
+            cart_ids = set(request.user.shopping_list.values_list('id', flat=True))
+        else:
+            fav_ids = cart_ids = set()
+
+        data['is_favorited'] = inst.id in fav_ids
+        data['is_in_shopping_cart'] = inst.id in cart_ids
+        return Response(data, status=status.HTTP_200_OK)
 
     @action(
         detail=True,
