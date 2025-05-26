@@ -131,4 +131,8 @@ AUTH_USER_MODEL = 'users.User'
 DJOSER = {
     'USER_CREATE_PASSWORD_RETYPE': False,
     'LOGIN_FIELD': 'email',
+    # 'SERIALIZERS': {
+    #     # 'current_user': 'api.serializers.UserDetailSerializer',
+    #     # 'set_password': 'api.serializers.SetPasswordSerializer',
+    # },
 }

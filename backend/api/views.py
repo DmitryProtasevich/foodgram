@@ -37,6 +37,30 @@ class UserViewSet(viewsets.ModelViewSet):
             return UserDetailSerializer
         return UserCreateSerializer
 
+    def get_queryset(self):
+        queryset = super().get_queryset()
+        user = self.request.user
+        subscribed_ids = set()
+        if user.is_authenticated:
+            subscribed_ids = set(
+                Follow.objects.filter(user=user)
+                .values_list('following_id', flat=True)
+            )
+        for u in queryset:
+            u.is_subscribed = u.id in subscribed_ids
+
+        return queryset
+
+    def retrieve(self, request, *args, **kwargs):
+        instance = self.get_object()
+        user = request.user
+        instance.is_subscribed = (
+            user.is_authenticated and 
+            Follow.objects.filter(user=user, following=instance).exists()
+        )
+        serializer = self.get_serializer(instance)
+        return Response(serializer.data)
+
     @action(
         detail=False,
         methods=('get',),
