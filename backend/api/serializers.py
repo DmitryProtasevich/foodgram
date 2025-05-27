@@ -243,6 +243,7 @@ class RecipeWriteSerializer(serializers.ModelSerializer):
 
 class SubscriptionSerializer(serializers.ModelSerializer):
     """Сериализатор для подписок."""
+
     email = serializers.EmailField(read_only=True)
     id = serializers.IntegerField(read_only=True)
     username = serializers.CharField(read_only=True)
