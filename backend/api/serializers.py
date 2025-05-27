@@ -1,7 +1,7 @@
 from django.contrib.auth import get_user_model
-from django.contrib.auth.password_validation import validate_password
 from drf_extra_fields.fields import Base64ImageField
 from rest_framework import serializers
+from django.contrib.auth.password_validation import validate_password
 
 from recipes.constants import Constants
 from recipes.models import Ingredient, Recipe, RecipeIngredient, Tag
@@ -243,7 +243,6 @@ class RecipeWriteSerializer(serializers.ModelSerializer):
 
 class SubscriptionSerializer(serializers.ModelSerializer):
     """Сериализатор для подписок."""
-
     email = serializers.EmailField(read_only=True)
     id = serializers.IntegerField(read_only=True)
     username = serializers.CharField(read_only=True)
