@@ -201,17 +201,15 @@ class UserViewSet(viewsets.ModelViewSet):
                 if page is not None else Response(serializer.data))
 
 
-class TagsViewSet(viewsets.ModelViewSet):
+class TagsViewSet(viewsets.ReadOnlyModelViewSet):
     queryset = Tag.objects.all()
     serializer_class = TagsSerializer
-    http_method_names = ('get',)
     pagination_class = None
 
 
-class IngredientsViewSet(viewsets.ModelViewSet):
+class IngredientsViewSet(viewsets.ReadOnlyModelViewSet):
     queryset = Ingredient.objects.all()
     serializer_class = IngredientsSerializer
-    http_method_names = ('get',)
     pagination_class = None
     filterset_fields = ('name',)
 
