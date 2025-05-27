@@ -1,7 +1,7 @@
 from django.contrib.auth import get_user_model
+from django.contrib.auth.password_validation import validate_password
 from drf_extra_fields.fields import Base64ImageField
 from rest_framework import serializers
-from django.contrib.auth.password_validation import validate_password
 
 from recipes.constants import Constants
 from recipes.models import Ingredient, Recipe, RecipeIngredient, Tag
@@ -241,35 +241,34 @@ class RecipeWriteSerializer(serializers.ModelSerializer):
         return instance
 
 
-class SubscriptionSerializer(UserDetailSerializer):
+class SubscriptionSerializer(serializers.ModelSerializer):
     """Сериализатор для подписок."""
 
-    recipes = serializers.SerializerMethodField()
-    recipes_count = serializers.SerializerMethodField()
-    avatar = serializers.SerializerMethodField()
+    email = serializers.EmailField(read_only=True)
+    id = serializers.IntegerField(read_only=True)
+    username = serializers.CharField(read_only=True)
+    first_name = serializers.CharField(read_only=True)
+    last_name = serializers.CharField(read_only=True)
+    avatar = serializers.ImageField(use_url=True, read_only=True,
+                                    required=False, allow_null=True)
+    is_subscribed = serializers.BooleanField(read_only=True)
+    recipes_count = serializers.IntegerField(read_only=True)
+    recipes = RecipeShortSerializer(
+        many=True,
+        read_only=True,
+        source='recipes_list'
+    )
 
-    class Meta(UserDetailSerializer.Meta):
-        fields = UserDetailSerializer.Meta.fields + (
+    class Meta:
+        model = User
+        fields = (
+            'email',
+            'id',
+            'username',
+            'first_name',
+            'last_name',
+            'avatar',
+            'is_subscribed',
+            'recipes_count',
             'recipes',
-            'recipes_count'
         )
-
-    def get_recipes(self, obj):
-        recipes_limit = self.context.get('recipes_limit')
-        recipes = obj.recipes.all()
-        if recipes_limit and recipes_limit.isdigit():
-            recipes = recipes[:int(recipes_limit)]
-        return RecipeShortSerializer(
-            recipes,
-            many=True,
-            context=self.context
-        ).data
-
-    def get_recipes_count(self, obj):
-        return obj.recipes.count()
-
-    def get_avatar(self, obj):
-        if obj.avatar:
-            return self.context.get('request'
-                                    ).build_absolute_uri(obj.avatar.url)
-        return None

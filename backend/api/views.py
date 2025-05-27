@@ -1,5 +1,4 @@
 from django.contrib.auth import get_user_model
-from django.db.models import Prefetch
 from django.http import HttpResponse
 from django.utils.http import int_to_base36
 from django_filters.rest_framework import DjangoFilterBackend
@@ -133,20 +132,26 @@ class UserViewSet(viewsets.ModelViewSet):
                 {'detail': 'Нельзя подписаться на самого себя'},
                 status=status.HTTP_400_BAD_REQUEST
             )
-
         if Follow.objects.filter(user=user, following=author).exists():
             return Response(
                 {'detail': 'Подписка уже существует'},
                 status=status.HTTP_400_BAD_REQUEST
             )
-
         Follow.objects.create(user=user, following=author)
+        author.is_subscribed = True
+        author.recipes_count = author.recipes.count()
+        limit = self.request.query_params.get('recipes_limit')
+        try:
+            rl = int(limit) if limit is not None else None
+        except ValueError:
+            rl = None
+        qs = author.recipes.all()
+        if rl is not None:
+            qs = qs[:rl]
+        author.recipes_list = list(qs)
         serializer = SubscriptionSerializer(
             author,
-            context={
-                'request': self.request,
-                'recipes_limit': self.request.query_params.get('recipes_limit')
-            }
+            context={'request': self.request}
         )
         return Response(serializer.data, status=status.HTTP_201_CREATED)
 
@@ -170,22 +175,30 @@ class UserViewSet(viewsets.ModelViewSet):
         serializer_class=SubscriptionSerializer,
     )
     def subscriptions(self, request):
-        qs = User.objects.filter(
-            subscribers__user=request.user
-        ).prefetch_related(
-            Prefetch('recipes')
-        ).order_by('id')
-
+        qs = User.objects.filter(subscribers__user=request.user) \
+                         .prefetch_related('recipes')
         page = self.paginate_queryset(qs)
-        serializer = self.get_serializer(
-            page,
+        authors = list(page) if page is not None else list(qs)
+        limit = request.query_params.get('recipes_limit')
+        try:
+            rl = int(limit) if limit is not None else None
+        except ValueError:
+            rl = None
+
+        for author in authors:
+            author.is_subscribed = True
+            author.recipes_count = author.recipes.count()
+            qs = author.recipes.all()
+            if rl is not None:
+                qs = qs[:rl]
+            author.recipes_list = list(qs)
+        serializer = SubscriptionSerializer(
+            authors,
             many=True,
-            context={
-                'request': request,
-                'recipes_limit': request.query_params.get('recipes_limit')
-            }
+            context={'request': request}
         )
-        return self.get_paginated_response(serializer.data)
+        return (self.get_paginated_response(serializer.data)
+                if page is not None else Response(serializer.data))
 
 
 class TagsViewSet(viewsets.ModelViewSet):
@@ -215,6 +228,22 @@ class RecipesViewSet(viewsets.ModelViewSet):
             return RecipeReadSerializer
         return RecipeWriteSerializer
 
+    def get_queryset(self):
+        qs = super().get_queryset()
+        user = self.request.user
+        params = self.request.query_params
+        fav = params.get('is_favorited')
+        if fav is not None and user.is_authenticated:
+            ids = user.favorites.values_list('id', flat=True)
+            qs = qs.filter(id__in=ids) if fav in ['1', 'true', 'True'] \
+                 else qs.exclude(id__in=ids)
+        cart = params.get('is_in_shopping_cart')
+        if cart is not None and user.is_authenticated:
+            ids = user.shopping_list.values_list('id', flat=True)
+            qs = qs.filter(id__in=ids) if cart in ['1', 'true', 'True'] \
+                 else qs.exclude(id__in=ids)
+        return qs
+
     def list(self, request, *args, **kwargs):
         qs = self.filter_queryset(self.get_queryset())
         page = self.paginate_queryset(qs)
@@ -227,7 +256,6 @@ class RecipesViewSet(viewsets.ModelViewSet):
         for item in data:
             item['is_favorited'] = item['id'] in fav_ids
             item['is_in_shopping_cart'] = item['id'] in cart_ids
-
         return self.get_paginated_response(data)
 
     def retrieve(self, request, *args, **kwargs):
