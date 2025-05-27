@@ -8,6 +8,7 @@ from users.validators import username_validator
 
 class User(AbstractUser):
     """Модель пользователей."""
+
     USERNAME_FIELD = 'email'
     REQUIRED_FIELDS = ['username']
     ADMIN = 'admin'

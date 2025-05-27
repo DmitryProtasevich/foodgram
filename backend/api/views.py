@@ -1,29 +1,30 @@
-from django.contrib.auth import get_user_model
-from django.http import HttpResponse
-from django.shortcuts import get_object_or_404
-from django.utils.http import int_to_base36
-from django_filters.rest_framework import DjangoFilterBackend
-from djoser.serializers import SetPasswordSerializer
 from rest_framework import filters, pagination, permissions, status, viewsets
 from rest_framework.decorators import action
 from rest_framework.response import Response
+from django.contrib.auth import get_user_model
 from django.db import IntegrityError
+from django.http import HttpResponse
+from django.shortcuts import get_object_or_404
+from django.utils.http import int_to_base36
 
-from recipes.models import (Follow, Ingredient, Recipe, RecipeIngredient,
-                            ShoppingCart, Tag)
+from django_filters.rest_framework import DjangoFilterBackend
+from djoser.serializers import SetPasswordSerializer
 
+from recipes.models import (Follow, Ingredient, Recipe,
+                            RecipeIngredient, ShoppingCart, Tag)
 from .filters import RecipesFilter
 from .permissions import IsAuthorOrAdminOrModeratorOrReadOnly
-from .serializers import (AvatarSerializer, IngredientsSerializer,
-                          RecipeReadSerializer, RecipeShortSerializer,
-                          RecipeWriteSerializer, SubscriptionSerializer,
-                          TagsSerializer, UserCreateSerializer,
-                          UserDetailSerializer)
-
+from .serializers import (
+    AvatarSerializer, IngredientsSerializer, RecipeReadSerializer,
+    RecipeShortSerializer, RecipeWriteSerializer, SubscriptionSerializer,
+    TagsSerializer, UserCreateSerializer, UserDetailSerializer
+)
 User = get_user_model()
 
 
 class UserViewSet(viewsets.ModelViewSet):
+    """Вьюсет для объектов пользователя."""
+
     queryset = User.objects.all().prefetch_related('recipes')
     filter_backends = (DjangoFilterBackend, filters.OrderingFilter)
     search_fields = ('username',)
@@ -186,12 +187,16 @@ class UserViewSet(viewsets.ModelViewSet):
 
 
 class TagsViewSet(viewsets.ReadOnlyModelViewSet):
+    """Вьюсет для тегов."""
+
     queryset = Tag.objects.all()
     serializer_class = TagsSerializer
     pagination_class = None
 
 
 class IngredientsViewSet(viewsets.ReadOnlyModelViewSet):
+    """Вьюсет для тегов."""
+
     queryset = Ingredient.objects.all()
     serializer_class = IngredientsSerializer
     pagination_class = None
@@ -199,6 +204,8 @@ class IngredientsViewSet(viewsets.ReadOnlyModelViewSet):
 
 
 class RecipesViewSet(viewsets.ModelViewSet):
+    """Вьюсет для рецептов."""
+
     queryset = Recipe.objects.all()
     pagination_class = pagination.LimitOffsetPagination
     filter_backends = (DjangoFilterBackend,)
