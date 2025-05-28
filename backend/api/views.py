@@ -19,6 +19,7 @@ from .serializers import (
     RecipeShortSerializer, RecipeWriteSerializer, SubscriptionSerializer,
     TagsSerializer, UserCreateSerializer, UserDetailSerializer
 )
+
 User = get_user_model()
 
 

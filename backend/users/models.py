@@ -71,6 +71,7 @@ class User(AbstractUser):
     avatar = models.ImageField(
         'Аватар',
         blank=True,
+        upload_to='users/%Y/%m/%d/',
     )
 
     class Meta:
