@@ -99,9 +99,9 @@ USE_L10N = True
 
 USE_TZ = True
 
-STATIC_URL = '/static/'
+STATIC_URL = 'api/static/'
 
-STATIC_ROOT = BASE_DIR / 'collected_static'
+STATIC_ROOT = os.path.join(BASE_DIR, 'static_backend')
 
 MEDIA_URL = '/media/'
 
@@ -132,3 +132,5 @@ DJOSER = {
     'USER_CREATE_PASSWORD_RETYPE': False,
     'LOGIN_FIELD': 'email',
 }
+
+CSV_FILES_DIR = os.path.join(BASE_DIR, 'data/')

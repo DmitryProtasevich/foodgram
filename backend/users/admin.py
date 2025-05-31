@@ -21,7 +21,7 @@ class UserAdmin(BaseUserAdmin):
     empty_value_display = 'значение отсутствует'
     list_editable = ('role',)
     list_filter = ('username',)
-    search_fields = ('username', 'role')
+    search_fields = ('username', 'role', 'email')
 
     @admin.display(description='Аватар')
     def avatar_preview(self, obj):

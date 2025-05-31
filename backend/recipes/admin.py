@@ -1,7 +1,7 @@
 from django.contrib import admin
 from django.utils.safestring import mark_safe
 
-from .models import Favorite, Follow, Recipe, ShoppingCart, Tag
+from .models import Favorite, Follow, Recipe, ShoppingCart, Tag, Ingredient
 
 
 class RecipeNameMixin:
@@ -16,7 +16,7 @@ class RecipeNameMixin:
 class RecipeAdmin(admin.ModelAdmin):
     """Административный интерфейс для управления рецептами."""
 
-    list_display = ('id', 'author', 'name', 'get_tags',
+    list_display = ('id', 'author', 'name', 'get_tags', 'favorites_count',
                     'get_ingredients', 'image_preview', 'cooking_time')
     search_fields = ('author__username', 'name', 'text')
     list_filter = ('tags', 'author')
@@ -39,6 +39,19 @@ class RecipeAdmin(admin.ModelAdmin):
             f'{ri.ingredient.name} ({ri.amount})'
             for ri in obj.recipe_ingredients.all()
         )
+
+    @admin.display(description='Количество добавлений в избранное')
+    def favorites_count(self, obj):
+        return obj.favorite_set.count()
+
+
+@admin.register(Ingredient)
+class IngredientAdmin(admin.ModelAdmin):
+    """Административный интерфейс для управления ингредиентами."""
+
+    list_display = ('id', 'name', 'measurement_unit')
+    list_filter = ('name',)
+    search_fields = ('name',)
 
 
 @admin.register(Tag)
