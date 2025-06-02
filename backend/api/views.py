@@ -1,24 +1,24 @@
-from rest_framework import filters, pagination, permissions, status, viewsets
-from rest_framework.decorators import action
-from rest_framework.response import Response
 from django.contrib.auth import get_user_model
 from django.db import IntegrityError
 from django.http import HttpResponse
 from django.shortcuts import get_object_or_404
 from django.utils.http import int_to_base36
-
 from django_filters.rest_framework import DjangoFilterBackend
 from djoser.serializers import SetPasswordSerializer
+from rest_framework import filters, pagination, permissions, status, viewsets
+from rest_framework.decorators import action
+from rest_framework.response import Response
 
-from recipes.models import (Follow, Ingredient, Recipe,
-                            RecipeIngredient, ShoppingCart, Tag)
+from recipes.models import (Follow, Ingredient, Recipe, RecipeIngredient,
+                            ShoppingCart, Tag)
+
 from .filters import RecipesFilter
 from .permissions import IsAuthorOrAdminOrModeratorOrReadOnly
-from .serializers import (
-    AvatarSerializer, IngredientsSerializer, RecipeReadSerializer,
-    RecipeShortSerializer, RecipeWriteSerializer, SubscriptionSerializer,
-    TagsSerializer, UserCreateSerializer, UserDetailSerializer
-)
+from .serializers import (AvatarSerializer, IngredientsSerializer,
+                          RecipeReadSerializer, RecipeShortSerializer,
+                          RecipeWriteSerializer, SubscriptionSerializer,
+                          TagsSerializer, UserCreateSerializer,
+                          UserDetailSerializer)
 
 User = get_user_model()
 
@@ -56,8 +56,9 @@ class UserViewSet(viewsets.ModelViewSet):
     def retrieve(self, request, *args, **kwargs):
         obj = self.get_object()
         obj.is_subscribed = (
-            request.user.is_authenticated and
-            Follow.objects.filter(user=request.user, following=obj).exists()
+            request.user.is_authenticated and Follow.objects.filter(
+                user=request.user, following=obj
+            ).exists()
         )
         return super().retrieve(request, *args, **kwargs)
 
@@ -319,7 +320,7 @@ class RecipesViewSet(viewsets.ModelViewSet):
             user.shopping_list.add(recipe)
             return Response(RecipeShortSerializer(
                 recipe, context={'request': request}
-                ).data, status=status.HTTP_201_CREATED)
+            ).data, status=status.HTTP_201_CREATED)
         if not user.shopping_list.filter(id=recipe.id).exists():
             return Response({'detail': 'Рецепта нет в списке покупок'},
                             status=status.HTTP_400_BAD_REQUEST)
