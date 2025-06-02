@@ -33,7 +33,7 @@ services:
     container_name: foodgram-proxy
     image: nginx:1.25.4-alpine
     ports:
-      - "80:80"
+      - 8000:80
     volumes:
       - ./infra/nginx.conf:/etc/nginx/conf.d/default.conf
       - static:/static

@@ -29,7 +29,7 @@ services:
     container_name: foodgram-proxy
     image: protasdmitry/foodgram_nginx
     ports:
-      - "80:80"
+      - 8000:80
     volumes:
       - ./infra/nginx.conf:/etc/nginx/conf.d/default.conf
       - static:/static
