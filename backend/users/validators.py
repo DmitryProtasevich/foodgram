@@ -5,9 +5,7 @@ from django.core.exceptions import ValidationError
 
 def username_validator(value):
     """
-    Валидатор для имени пользователя. Проверяет, что имя пользователя не
-    равно 'me' и содержит только разрешённые символы
-    (буквы, цифры, ., @, +, -, _).
+    Валидатор для имени пользователя.
     """
     unmatched = re.sub(r'[\w.@+-]', '', value)
 
