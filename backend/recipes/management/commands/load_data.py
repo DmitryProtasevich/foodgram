@@ -1,5 +1,4 @@
 import csv
-from enum import unique
 import os
 
 from django.conf import settings
