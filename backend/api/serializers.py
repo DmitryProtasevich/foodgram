@@ -101,7 +101,7 @@ class RecipeIngredientReadSerializer(serializers.ModelSerializer):
         fields = ('id', 'name', 'measurement_unit', 'amount')
 
 
-class RecipeIngredientWriteSerializer(serializers.Serializer):
+class RecipeIngredientWriteSerializer(serializers.ModelSerializer):
     """Сериализатор для создания ингредиентов рецепта."""
 
     id = serializers.IntegerField()
@@ -112,6 +112,10 @@ class RecipeIngredientWriteSerializer(serializers.Serializer):
                 f'Количество не может быть меньше {Constants.MIN_AMOUNT}.'
         }
     )
+
+    class Meta:
+        model = RecipeIngredient
+        fields = ('id', 'amount')
 
 
 class RecipeShortSerializer(serializers.ModelSerializer):

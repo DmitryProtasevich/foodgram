@@ -1,4 +1,5 @@
 import csv
+from enum import unique
 import os
 
 from django.conf import settings
@@ -24,6 +25,13 @@ class Command(BaseCommand):
                 ))
                 return
             self.stdout.write(f'Началась загрузка файла: {file_name}.csv')
+            if file_name == 'tags':
+                unique_field = 'slug'
+            else:
+                unique_field = 'name'
+            existing_values = set(
+                model.objects.values_list(unique_field, flat=True).distinct()
+            )
             with open(path, encoding='utf-8') as f:
                 objects = []
                 if file_name == 'ingredients':
@@ -33,6 +41,9 @@ class Command(BaseCommand):
                 else:
                     reader = csv.DictReader(f)
                 for row in reader:
+                    unique_val = row.get(unique_field)
+                    if unique_val in existing_values:
+                        continue
                     data = {}
                     for field, value in row.items():
                         if field.endswith('_id') and field != 'id':
@@ -42,6 +53,7 @@ class Command(BaseCommand):
                         else:
                             data[field] = value
                     objects.append(model(**data))
+                    existing_values.add(unique_val)
                 model.objects.bulk_create(objects, ignore_conflicts=True)
             self.stdout.write(self.style.SUCCESS(
                 f'Загрузка {file_name}.csv завершена'
