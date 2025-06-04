@@ -17,7 +17,8 @@ class RecipeAdmin(admin.ModelAdmin):
     """Административный интерфейс для управления рецептами."""
 
     list_display = ('id', 'author', 'name', 'get_tags', 'favorites_count',
-                    'get_ingredients', 'image_preview', 'cooking_time')
+                    'get_ingredients', 'image_preview', 'cooking_time',
+                    'pub_date')
     search_fields = ('author__username', 'name', 'text')
     list_filter = ('tags', 'author')
 
