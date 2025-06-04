@@ -5,7 +5,7 @@ from django.shortcuts import get_object_or_404
 from django.utils.http import int_to_base36
 from django_filters.rest_framework import DjangoFilterBackend
 from djoser.serializers import SetPasswordSerializer
-from rest_framework import filters, pagination, permissions, status, viewsets
+from rest_framework import filters, permissions, status, viewsets
 from rest_framework.decorators import action
 from rest_framework.response import Response
 
@@ -31,7 +31,6 @@ class UserViewSet(viewsets.ModelViewSet):
     search_fields = ('username',)
     lookup_field = 'id'
     http_method_names = ('get', 'post', 'put', 'delete', 'head', 'options')
-    pagination_class = pagination.LimitOffsetPagination
 
     def get_serializer_class(self):
         if self.action in ('subscriptions', 'subscribe'):
@@ -209,7 +208,6 @@ class RecipesViewSet(viewsets.ModelViewSet):
     """Вьюсет для рецептов."""
 
     queryset = Recipe.objects.all()
-    pagination_class = pagination.LimitOffsetPagination
     filter_backends = (DjangoFilterBackend,)
     filterset_class = RecipesFilter
     permission_classes = (IsAuthorOrAdminOrModeratorOrReadOnly,)

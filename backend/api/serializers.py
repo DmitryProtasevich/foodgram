@@ -37,7 +37,7 @@ class UserDetailSerializer(serializers.ModelSerializer):
     """Сериализатор для просмотра пользователей."""
 
     is_subscribed = serializers.BooleanField(read_only=True)
-    avatar = Base64ImageField(use_url=True)
+    avatar = Base64ImageField(use_url=False)
 
     class Meta:
         model = User
@@ -56,7 +56,7 @@ class UserDetailSerializer(serializers.ModelSerializer):
 class AvatarSerializer(serializers.ModelSerializer):
     """Сериализатор для аватара."""
 
-    avatar = Base64ImageField(use_url=True, required=True)
+    avatar = Base64ImageField(use_url=False, required=True)
 
     class Meta:
         model = User
@@ -134,7 +134,7 @@ class RecipeReadSerializer(serializers.ModelSerializer):
     ingredients = RecipeIngredientReadSerializer(
         source='recipe_ingredients', many=True, read_only=True
     )
-    image = Base64ImageField(use_url=True, read_only=True)
+    image = Base64ImageField(use_url=False, read_only=True)
     is_favorited = serializers.BooleanField(read_only=True)
     is_in_shopping_cart = serializers.BooleanField(read_only=True)
 
@@ -154,7 +154,7 @@ class RecipeWriteSerializer(serializers.ModelSerializer):
     tags = serializers.PrimaryKeyRelatedField(
         many=True, queryset=Tag.objects.all()
     )
-    image = Base64ImageField(use_url=True)
+    image = Base64ImageField(use_url=False)
 
     class Meta:
         model = Recipe
