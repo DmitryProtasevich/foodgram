@@ -217,77 +217,6 @@ class RecipesViewSet(viewsets.ModelViewSet):
             return RecipeReadSerializer
         return RecipeWriteSerializer
 
-    def get_queryset(self):
-        queryset = super().get_queryset()
-        user = self.request.user
-        params = self.request.query_params
-        if user.is_authenticated:
-            if 'is_favorited' in params:
-                fav_ids = user.favorites.values_list('id', flat=True)
-                queryset = (
-                    queryset.filter(id__in=fav_ids)
-                    if params['is_favorited'].lower()
-                    in ['1', 'true'] else queryset.exclude(id__in=fav_ids)
-                )
-            if 'is_in_shopping_cart' in params:
-                cart_ids = user.shopping_list.values_list('id', flat=True)
-                queryset = (
-                    queryset.filter(id__in=cart_ids)
-                    if params['is_in_shopping_cart'].lower()
-                    in ['1', 'true'] else queryset.exclude(id__in=cart_ids)
-                )
-        return queryset
-
-    def get_user_recipe_sets(self):
-        user = self.request.user
-        if not user.is_authenticated:
-            return set(), set()
-        fav_ids = set(user.favorites.values_list('id', flat=True))
-        cart_ids = set(user.shopping_list.values_list('id', flat=True))
-        return fav_ids, cart_ids
-
-    def list(self, request, *args, **kwargs):
-        paginated = self.paginate_queryset(
-            self.filter_queryset(self.get_queryset())
-        )
-        serialized = RecipeReadSerializer(paginated, many=True,
-                                          context={'request': request}).data
-        fav_ids, cart_ids = self.get_user_recipe_sets()
-        for recipe in serialized:
-            recipe['is_favorited'] = recipe['id'] in fav_ids
-            recipe['is_in_shopping_cart'] = recipe['id'] in cart_ids
-        return self.get_paginated_response(serialized)
-
-    def retrieve(self, request, *args, **kwargs):
-        recipe = self.get_object()
-        data = RecipeReadSerializer(recipe, context={'request': request}).data
-        fav_ids, cart_ids = self.get_user_recipe_sets()
-        data['is_favorited'] = recipe.id in fav_ids
-        data['is_in_shopping_cart'] = recipe.id in cart_ids
-        return Response(data)
-
-    def create(self, request, *args, **kwargs):
-        serializer = self.get_serializer(data=request.data)
-        serializer.is_valid(raise_exception=True)
-        new_recipe = serializer.save(author=request.user)
-        data = RecipeReadSerializer(new_recipe,
-                                    context={'request': request}).data
-        data.update({'is_favorited': False, 'is_in_shopping_cart': False})
-        headers = self.get_success_headers(data)
-        return Response(data, status=status.HTTP_201_CREATED, headers=headers)
-
-    def partial_update(self, request, *args, **kwargs):
-        recipe = self.get_object()
-        serializer = self.get_serializer(recipe,
-                                         data=request.data, partial=True)
-        serializer.is_valid(raise_exception=True)
-        serializer.save()
-        data = RecipeReadSerializer(recipe, context={'request': request}).data
-        fav_ids, cart_ids = self.get_user_recipe_sets()
-        data['is_favorited'] = recipe.id in fav_ids
-        data['is_in_shopping_cart'] = recipe.id in cart_ids
-        return Response(data)
-
     @action(
         detail=True,
         methods=['get'],
@@ -301,31 +230,6 @@ class RecipesViewSet(viewsets.ModelViewSet):
         )
 
     @action(
-        detail=True,
-        methods=['post', 'delete'],
-        url_path='shopping_cart',
-        permission_classes=(permissions.IsAuthenticated,),
-        serializer_class=RecipeShortSerializer,
-    )
-    def shopping_cart(self, request, pk=None):
-        recipe = self.get_object()
-        user = request.user
-
-        if request.method == 'POST':
-            if user.shopping_list.filter(id=recipe.id).exists():
-                return Response({'detail': 'Рецепт уже в списке покупок'},
-                                status=status.HTTP_400_BAD_REQUEST)
-            user.shopping_list.add(recipe)
-            return Response(RecipeShortSerializer(
-                recipe, context={'request': request}
-            ).data, status=status.HTTP_201_CREATED)
-        if not user.shopping_list.filter(id=recipe.id).exists():
-            return Response({'detail': 'Рецепта нет в списке покупок'},
-                            status=status.HTTP_400_BAD_REQUEST)
-        user.shopping_list.remove(recipe)
-        return Response(status=status.HTTP_204_NO_CONTENT)
-
-    @action(
         detail=False,
         methods=['get'],
         url_path='download_shopping_cart',
@@ -333,24 +237,53 @@ class RecipesViewSet(viewsets.ModelViewSet):
         pagination_class=None
     )
     def download_shopping_cart(self, request):
-        recipe_ids = ShoppingCart.objects.filter(
-            user=request.user
-        ).values_list('recipe', flat=True)
-        ingredients = RecipeIngredient.objects.filter(recipe__in=recipe_ids)
+        ingredients = RecipeIngredient.objects.filter(
+            recipe__in=ShoppingCart.objects.filter(
+                user=request.user
+            ).values_list('recipe', flat=True)
+        ).select_related('ingredient')
         totals = {}
         for item in ingredients:
             key = (item.ingredient.name, item.ingredient.measurement_unit)
             totals[key] = totals.get(key, 0) + item.amount
-        lines = ['Список покупок:\n'] + [
+        response = HttpResponse('\n'.join(['Список покупок:\n'] + [
             f'{name} ({unit}) — {amount}'
             for (name, unit), amount in totals.items()
-        ]
-        content = '\n'.join(lines)
-        response = HttpResponse(content,
-                                content_type='text/plain; charset=utf-8')
+        ]), content_type='text/plain; charset=utf-8')
         response['Content-Disposition'
                  ] = 'attachment; filename="shopping_list.txt"'
         return response
+
+    def handle_relation(self, request, name, detail, detail_not_exists):
+        recipe = self.get_object()
+        relation = getattr(request.user, name)
+        if request.method == 'POST':
+            if relation.filter(id=recipe.id).exists():
+                return Response({'detail': detail},
+                                status=status.HTTP_400_BAD_REQUEST)
+            relation.add(recipe)
+            return Response(RecipeShortSerializer(
+                recipe, context={'request': request}
+            ).data, status=status.HTTP_201_CREATED)
+        if not relation.filter(id=recipe.id).exists():
+            return Response({'detail': detail_not_exists},
+                            status=status.HTTP_400_BAD_REQUEST)
+        relation.remove(recipe)
+        return Response(status=status.HTTP_204_NO_CONTENT)
+
+    @action(
+        detail=True,
+        methods=['post', 'delete'],
+        url_path='shopping_cart',
+        permission_classes=(permissions.IsAuthenticated,),
+        serializer_class=RecipeShortSerializer,
+    )
+    def shopping_cart(self, request, pk=None):
+        return self.handle_relation(
+            request,
+            name='shopping_list',
+            detail='Рецепт уже в списке покупок',
+            detail_not_exists='Рецепта нет в списке покупок')
 
     @action(
         detail=True,
@@ -360,18 +293,8 @@ class RecipesViewSet(viewsets.ModelViewSet):
         serializer_class=RecipeShortSerializer,
     )
     def favorite(self, request, pk=None):
-        recipe = self.get_object()
-        user = request.user
-        if request.method == 'POST':
-            if user.favorites.filter(id=recipe.id).exists():
-                return Response({'detail': 'Рецепт уже в избранном'},
-                                status=status.HTTP_400_BAD_REQUEST)
-            user.favorites.add(recipe)
-            return Response(RecipeShortSerializer(
-                recipe, context={'request': request}
-            ).data, status=status.HTTP_201_CREATED)
-        if not user.favorites.filter(id=recipe.id).exists():
-            return Response({'detail': 'Рецепта нет в избранном'},
-                            status=status.HTTP_400_BAD_REQUEST)
-        user.favorites.remove(recipe)
-        return Response(status=status.HTTP_204_NO_CONTENT)
+        return self.handle_relation(
+            request,
+            name='favorites',
+            detail='Рецепт уже в избранном',
+            detail_not_exists='Рецепта нет в избранном')

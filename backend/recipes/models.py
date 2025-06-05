@@ -149,7 +149,6 @@ class Recipe(AbstractTitle):
     image = models.ImageField(
         'Изображение',
         upload_to='recipes/%Y/%m/%d/',
-        null=False
     )
     text = models.TextField('Описание')
     cooking_time = models.IntegerField(
