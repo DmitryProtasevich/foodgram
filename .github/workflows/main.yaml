@@ -92,8 +92,7 @@ jobs:
           tags: ${{ secrets.DOCKER_USERNAME }}/foodgram_nginx:latest
 
   deploy:
-    if: github.ref == 'refs/heads/main' ||
-        github.ref == 'refs/heads/develop'
+    if: github.ref == 'refs/heads/develop'
     runs-on: ubuntu-latest
     needs: 
       - build_and_push_to_docker_hub
