@@ -103,8 +103,10 @@ class Recipe(AbstractTitle):
         verbose_name='Теги рецепта'
     )
     author = models.ForeignKey(
-        settings.AUTH_USER_MODEL, on_delete=models.CASCADE,
+        settings.AUTH_USER_MODEL,
+        on_delete=models.CASCADE,
         verbose_name='Автор',
+        related_name='recipes'
     )
     ingredients = models.ManyToManyField(
         Ingredient,

@@ -1,8 +1,8 @@
 from django.contrib.auth import get_user_model
 from django.db import IntegrityError
 from django.http import HttpResponse
-from django.shortcuts import get_object_or_404
-from django.utils.http import int_to_base36
+from django.shortcuts import get_object_or_404, redirect
+from django.utils.http import base36_to_int, int_to_base36
 from django_filters.rest_framework import DjangoFilterBackend
 from djoser.serializers import SetPasswordSerializer
 from rest_framework import filters, permissions, status, viewsets
@@ -202,7 +202,8 @@ class IngredientsViewSet(viewsets.ReadOnlyModelViewSet):
     queryset = Ingredient.objects.all()
     serializer_class = IngredientsSerializer
     pagination_class = None
-    filterset_fields = ('name',)
+    filter_backends = (filters.SearchFilter,)
+    search_fields = ('^name',)
 
 
 class RecipesViewSet(viewsets.ModelViewSet):
@@ -226,7 +227,7 @@ class RecipesViewSet(viewsets.ModelViewSet):
     def get_short_link(self, request, pk=None):
         return Response(
             {'short-link': request.build_absolute_uri(
-                f'/s/{int_to_base36(self.get_object().id)}'
+                f'/api/s/{int_to_base36(self.get_object().id)}/'
             )}
         )
 
@@ -299,3 +300,12 @@ class RecipesViewSet(viewsets.ModelViewSet):
             model=Favorite,
             detail='Рецепт уже в избранном',
             detail_not_exists='Рецепта нет в избранном')
+
+
+def short_link_redirect(request, short_link_id):
+    """Перенаправляет пользователя на рецепт по короткой ссылке."""
+    try:
+        recipe_id = base36_to_int(short_link_id)
+    except ValueError:
+        return HttpResponse('Некорректная ссылка', status=400)
+    return redirect(f'/recipes/{recipe_id}')

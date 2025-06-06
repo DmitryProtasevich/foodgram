@@ -12,6 +12,22 @@ from users.models import Follow
 User = get_user_model()
 
 
+class IsSubscribedBaseSerializer(serializers.ModelSerializer):
+    is_subscribed = serializers.SerializerMethodField(read_only=True)
+
+    class Meta:
+        model = User
+
+    def get_is_subscribed(self, obj):
+        request = self.context.get('request')
+        if not request or request.user.is_anonymous:
+            return False
+        return Follow.objects.filter(
+            user=request.user,
+            following=obj
+        ).exists()
+
+
 class UserCreateSerializer(serializers.ModelSerializer):
     """Сериализатор для создания пользователей."""
 
@@ -36,14 +52,12 @@ class UserCreateSerializer(serializers.ModelSerializer):
         return User.objects.create_user(**validated_data)
 
 
-class UserDetailSerializer(serializers.ModelSerializer):
+class UserDetailSerializer(IsSubscribedBaseSerializer):
     """Сериализатор для просмотра пользователей."""
 
-    is_subscribed = serializers.SerializerMethodField(read_only=True)
     avatar = Base64ImageField()
 
-    class Meta:
-        model = User
+    class Meta(IsSubscribedBaseSerializer.Meta):
         fields = (
             'email',
             'id',
@@ -54,16 +68,6 @@ class UserDetailSerializer(serializers.ModelSerializer):
             'avatar'
         )
         read_only_fields = ('id',)
-
-    def get_is_subscribed(self, obj):
-
-        request = self.context.get('request')
-        if not request or request.user.is_anonymous:
-            return False
-        return Follow.objects.filter(
-            user=request.user,
-            following=obj
-        ).exists()
 
 
 class AvatarSerializer(serializers.ModelSerializer):
@@ -96,7 +100,7 @@ class IngredientsSerializer(serializers.ModelSerializer):
 
     class Meta:
         model = Ingredient
-        fields = fields = '__all__'
+        fields = '__all__'
 
 
 class RecipeIngredientReadSerializer(serializers.ModelSerializer):
@@ -273,7 +277,7 @@ class RecipeWriteSerializer(serializers.ModelSerializer):
         return serializer.data
 
 
-class SubscriptionSerializer(serializers.ModelSerializer):
+class SubscriptionSerializer(IsSubscribedBaseSerializer):
     """Сериализатор для подписок."""
 
     email = serializers.EmailField(read_only=True)
@@ -283,7 +287,6 @@ class SubscriptionSerializer(serializers.ModelSerializer):
     last_name = serializers.CharField(read_only=True)
     avatar = serializers.ImageField(use_url=True, read_only=True,
                                     required=False, allow_null=True)
-    is_subscribed = serializers.SerializerMethodField(read_only=True)
     recipes_count = serializers.IntegerField(read_only=True)
     recipes = RecipeShortSerializer(
         many=True,
@@ -291,8 +294,7 @@ class SubscriptionSerializer(serializers.ModelSerializer):
         source='recipes_list'
     )
 
-    class Meta:
-        model = User
+    class Meta(IsSubscribedBaseSerializer.Meta):
         fields = (
             'email',
             'id',
@@ -304,12 +306,3 @@ class SubscriptionSerializer(serializers.ModelSerializer):
             'recipes_count',
             'recipes',
         )
-
-    def get_is_subscribed(self, obj):
-        request = self.context.get('request')
-        if not request or request.user.is_anonymous:
-            return False
-        return Follow.objects.filter(
-            user=request.user,
-            following=obj
-        ).exists()

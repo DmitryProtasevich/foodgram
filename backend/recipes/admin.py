@@ -14,6 +14,8 @@ class RecipeNameMixin:
 
 
 class RecipeIngredientInline(admin.TabularInline):
+    """Инлайн для добавления ингредиентов к рецепту."""
+
     model = RecipeIngredient
     fields = ('ingredient', 'amount')
     extra = 0
@@ -22,6 +24,8 @@ class RecipeIngredientInline(admin.TabularInline):
 
 
 class RecipeTagInline(admin.TabularInline):
+    """Инлайн для добавления тегов к рецепту."""
+
     model = Recipe.tags.through
     extra = 0
     min_num = 1
