@@ -2,7 +2,7 @@ from django.contrib import admin
 from django.contrib.auth.admin import UserAdmin as BaseUserAdmin
 from django.utils.safestring import mark_safe
 
-from .models import User
+from .models import Follow, User
 
 
 @admin.register(User)
@@ -15,13 +15,11 @@ class UserAdmin(BaseUserAdmin):
         'email',
         'first_name',
         'last_name',
-        'role',
         'avatar_preview',
     )
     empty_value_display = 'значение отсутствует'
-    list_editable = ('role',)
     list_filter = ('username',)
-    search_fields = ('username', 'role', 'email')
+    search_fields = ('username', 'email')
 
     @admin.display(description='Аватар')
     def avatar_preview(self, obj):
@@ -30,3 +28,12 @@ class UserAdmin(BaseUserAdmin):
                 f'<img src="{obj.avatar.url}" width="80" height="60">'
             )
         return ''
+
+
+@admin.register(Follow)
+class FollowAdmin(admin.ModelAdmin):
+    """Административный интерфейс для управления подписками."""
+
+    list_display = ('id', 'user', 'following')
+    search_fields = ('user__username', 'following__username')
+    list_filter = ('user', 'following')

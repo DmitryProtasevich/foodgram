@@ -1,7 +1,8 @@
 from django.contrib import admin
 from django.utils.safestring import mark_safe
 
-from .models import Favorite, Follow, Ingredient, Recipe, ShoppingCart, Tag
+from .models import (Favorite, Ingredient, Recipe, RecipeIngredient,
+                     ShoppingCart, Tag)
 
 
 class RecipeNameMixin:
@@ -10,6 +11,21 @@ class RecipeNameMixin:
     @admin.display(description='Рецепт')
     def display_recipe(self, obj):
         return obj.recipe.name
+
+
+class RecipeIngredientInline(admin.TabularInline):
+    model = RecipeIngredient
+    fields = ('ingredient', 'amount')
+    extra = 0
+    min_num = 1
+    validate_min = True
+
+
+class RecipeTagInline(admin.TabularInline):
+    model = Recipe.tags.through
+    extra = 0
+    min_num = 1
+    validate_min = True
 
 
 @admin.register(Recipe)
@@ -21,6 +37,8 @@ class RecipeAdmin(admin.ModelAdmin):
                     'pub_date')
     search_fields = ('author__username', 'name', 'text')
     list_filter = ('tags', 'author')
+    exclude = ('tags',)
+    inlines = (RecipeIngredientInline, RecipeTagInline)
 
     @admin.display(description='Изображение')
     def image_preview(self, obj):
@@ -43,7 +61,7 @@ class RecipeAdmin(admin.ModelAdmin):
 
     @admin.display(description='Количество добавлений в избранное')
     def favorites_count(self, obj):
-        return obj.favorite_set.count()
+        return obj.favorites.count()
 
 
 @admin.register(Ingredient)
@@ -62,15 +80,6 @@ class TagAdmin(admin.ModelAdmin):
     list_display = ('id', 'name', 'slug')
     list_filter = ('name',)
     search_fields = ('name',)
-
-
-@admin.register(Follow)
-class FollowAdmin(admin.ModelAdmin):
-    """Административный интерфейс для управления подписками."""
-
-    list_display = ('id', 'user', 'following')
-    search_fields = ('user__username', 'following__username')
-    list_filter = ('user', 'following')
 
 
 @admin.register(Favorite)

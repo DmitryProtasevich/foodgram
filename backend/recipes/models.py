@@ -5,36 +5,6 @@ from django.db import models
 from recipes.constants import Constants
 
 
-class AbstractUserRecipe(models.Model):
-    """Абстрактная модель для пользователя и рецепта."""
-
-    user = models.ForeignKey(
-        settings.AUTH_USER_MODEL,
-        on_delete=models.CASCADE,
-        verbose_name='Пользователь',
-    )
-    recipe = models.ForeignKey(
-        'Recipe',
-        on_delete=models.CASCADE,
-        verbose_name='Рецепт',
-    )
-
-    class Meta:
-        abstract = True
-        ordering = ('recipe__name',)
-        constraints = (
-            models.UniqueConstraint(
-                fields=('user', 'recipe'),
-                name='%(app_label)s_%(class)s_unique_user_recipe'
-            ),
-        )
-
-    def __str__(self):
-        if self.recipe and len(self.recipe.name) > Constants.MAX_TITLE_LENGTH:
-            return f'{self.recipe.name[:Constants.MAX_TITLE_LENGTH]}...'
-        return self.recipe.name if self.recipe else ''
-
-
 class AbstractTitle(models.Model):
     """Абстрактная модель для строкового представления и сортировки."""
 
@@ -53,12 +23,12 @@ class Ingredient(AbstractTitle):
 
     name = models.CharField(
         'Название',
-        max_length=Constants.MAX_INGREDIENT_NAME_LENGHTH,
+        max_length=Constants.MAX_INGREDIENT_NAME_LENGTH,
         db_index=True,
     )
     measurement_unit = models.CharField(
         'Единицы измерения',
-        max_length=Constants.MAX_INGREDIENT_MEASUREMENT_LENGHTH,
+        max_length=Constants.MAX_INGREDIENT_MEASUREMENT_LENGTH,
         blank=True
     )
 
@@ -74,13 +44,13 @@ class Tag(AbstractTitle):
     name = models.CharField(
         'Название',
         unique=True,
-        max_length=Constants.MAX_TAG_NAME_LENGHTH,
+        max_length=Constants.MAX_TAG_NAME_LENGTH,
         db_index=True,
     )
     slug = models.SlugField(
         'Слаг',
         unique=True,
-        max_length=Constants.MAX_TAG_NAME_LENGHTH,
+        max_length=Constants.MAX_TAG_NAME_LENGTH,
         db_index=True,
         blank=True,
         null=True
@@ -143,7 +113,7 @@ class Recipe(AbstractTitle):
     )
     name = models.CharField(
         'Название',
-        max_length=Constants.MAX_NAME_LENGHTH,
+        max_length=Constants.MAX_NAME_LENGTH,
         db_index=True,
     )
     image = models.ImageField(
@@ -166,38 +136,34 @@ class Recipe(AbstractTitle):
         ordering = ('-pub_date',)
 
 
-class Follow(models.Model):
-    """Модель для подписок."""
+class AbstractUserRecipe(models.Model):
+    """Абстрактная модель для пользователя и рецепта."""
 
     user = models.ForeignKey(
         settings.AUTH_USER_MODEL,
         on_delete=models.CASCADE,
-        related_name='subscriptions',
-        verbose_name='Подписчик'
+        verbose_name='Пользователь',
     )
-    following = models.ForeignKey(
-        settings.AUTH_USER_MODEL,
+    recipe = models.ForeignKey(
+        Recipe,
         on_delete=models.CASCADE,
-        related_name='subscribers',
-        verbose_name='Подписки'
+        verbose_name='Рецепт',
     )
 
     class Meta:
-        verbose_name = 'подписка'
-        verbose_name_plural = 'Подписки'
+        abstract = True
+        ordering = ('recipe__name',)
         constraints = (
             models.UniqueConstraint(
-                name='unique_user_following',
-                fields=('user', 'following')
-            ),
-            models.CheckConstraint(
-                name='prevent_self_follow',
-                check=~models.Q(user=models.F('following')),
+                fields=('user', 'recipe'),
+                name='%(app_label)s_%(class)s_unique_user_recipe'
             ),
         )
 
     def __str__(self):
-        return f'{self.user} подписан на {self.following}'
+        if self.recipe and len(self.recipe.name) > Constants.MAX_TITLE_LENGTH:
+            return f'{self.recipe.name[:Constants.MAX_TITLE_LENGTH]}...'
+        return self.recipe.name if self.recipe else ''
 
 
 class ShoppingCart(AbstractUserRecipe):
@@ -206,6 +172,7 @@ class ShoppingCart(AbstractUserRecipe):
     class Meta(AbstractUserRecipe.Meta):
         verbose_name = 'список покупок'
         verbose_name_plural = 'Списки покупок'
+        default_related_name = 'shopping_carts'
 
 
 class Favorite(AbstractUserRecipe):
@@ -214,3 +181,4 @@ class Favorite(AbstractUserRecipe):
     class Meta(AbstractUserRecipe.Meta):
         verbose_name = 'рецепт в избранном'
         verbose_name_plural = 'Рецепты в избранном'
+        default_related_name = 'favorites'

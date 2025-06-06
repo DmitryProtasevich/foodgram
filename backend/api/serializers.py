@@ -7,6 +7,7 @@ from rest_framework import serializers
 from recipes.constants import Constants
 from recipes.models import (Favorite, Ingredient, Recipe, RecipeIngredient,
                             ShoppingCart, Tag)
+from users.models import Follow
 
 User = get_user_model()
 
@@ -38,7 +39,7 @@ class UserCreateSerializer(serializers.ModelSerializer):
 class UserDetailSerializer(serializers.ModelSerializer):
     """Сериализатор для просмотра пользователей."""
 
-    is_subscribed = serializers.BooleanField(read_only=True)
+    is_subscribed = serializers.SerializerMethodField(read_only=True)
     avatar = Base64ImageField()
 
     class Meta:
@@ -53,6 +54,16 @@ class UserDetailSerializer(serializers.ModelSerializer):
             'avatar'
         )
         read_only_fields = ('id',)
+
+    def get_is_subscribed(self, obj):
+
+        request = self.context.get('request')
+        if not request or request.user.is_anonymous:
+            return False
+        return Follow.objects.filter(
+            user=request.user,
+            following=obj
+        ).exists()
 
 
 class AvatarSerializer(serializers.ModelSerializer):
@@ -272,7 +283,7 @@ class SubscriptionSerializer(serializers.ModelSerializer):
     last_name = serializers.CharField(read_only=True)
     avatar = serializers.ImageField(use_url=True, read_only=True,
                                     required=False, allow_null=True)
-    is_subscribed = serializers.BooleanField(read_only=True)
+    is_subscribed = serializers.SerializerMethodField(read_only=True)
     recipes_count = serializers.IntegerField(read_only=True)
     recipes = RecipeShortSerializer(
         many=True,
@@ -293,3 +304,12 @@ class SubscriptionSerializer(serializers.ModelSerializer):
             'recipes_count',
             'recipes',
         )
+
+    def get_is_subscribed(self, obj):
+        request = self.context.get('request')
+        if not request or request.user.is_anonymous:
+            return False
+        return Follow.objects.filter(
+            user=request.user,
+            following=obj
+        ).exists()

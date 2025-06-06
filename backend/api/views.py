@@ -9,11 +9,12 @@ from rest_framework import filters, permissions, status, viewsets
 from rest_framework.decorators import action
 from rest_framework.response import Response
 
-from recipes.models import (Follow, Ingredient, Recipe, RecipeIngredient,
+from recipes.models import (Favorite, Ingredient, Recipe, RecipeIngredient,
                             ShoppingCart, Tag)
+from users.models import Follow
 
 from .filters import RecipesFilter
-from .permissions import IsAuthorOrAdminOrModeratorOrReadOnly
+from .permissions import IsAuthorOrAdminOrReadOnly
 from .serializers import (AvatarSerializer, IngredientsSerializer,
                           RecipeReadSerializer, RecipeShortSerializer,
                           RecipeWriteSerializer, SubscriptionSerializer,
@@ -33,14 +34,14 @@ class UserViewSet(viewsets.ModelViewSet):
     http_method_names = ('get', 'post', 'put', 'delete', 'head', 'options')
 
     def get_serializer_class(self):
+        if self.action in ('list', 'retrieve', 'me'):
+            return UserDetailSerializer
         if self.action in ('subscriptions', 'subscribe'):
             return SubscriptionSerializer
         if self.action == 'avatar':
             return AvatarSerializer
         if self.action == 'set_password':
             return SetPasswordSerializer
-        if self.action in ('list', 'retrieve', 'me'):
-            return UserDetailSerializer
         return UserCreateSerializer
 
     def list(self, request, *args, **kwargs):
@@ -210,7 +211,7 @@ class RecipesViewSet(viewsets.ModelViewSet):
     queryset = Recipe.objects.all()
     filter_backends = (DjangoFilterBackend,)
     filterset_class = RecipesFilter
-    permission_classes = (IsAuthorOrAdminOrModeratorOrReadOnly,)
+    permission_classes = (IsAuthorOrAdminOrReadOnly,)
 
     def get_serializer_class(self):
         if self.request.method == 'GET':
@@ -254,21 +255,21 @@ class RecipesViewSet(viewsets.ModelViewSet):
                  ] = 'attachment; filename="shopping_list.txt"'
         return response
 
-    def handle_relation(self, request, name, detail, detail_not_exists):
+    def handle_relation(self, request, model, detail, detail_not_exists):
         recipe = self.get_object()
-        relation = getattr(request.user, name)
+        user = request.user
         if request.method == 'POST':
-            if relation.filter(id=recipe.id).exists():
+            if model.objects.filter(user=user, recipe=recipe).exists():
                 return Response({'detail': detail},
                                 status=status.HTTP_400_BAD_REQUEST)
-            relation.add(recipe)
+            model.objects.create(user=user, recipe=recipe)
             return Response(RecipeShortSerializer(
                 recipe, context={'request': request}
             ).data, status=status.HTTP_201_CREATED)
-        if not relation.filter(id=recipe.id).exists():
+        deleted, _ = model.objects.filter(user=user, recipe=recipe).delete()
+        if not deleted:
             return Response({'detail': detail_not_exists},
                             status=status.HTTP_400_BAD_REQUEST)
-        relation.remove(recipe)
         return Response(status=status.HTTP_204_NO_CONTENT)
 
     @action(
@@ -281,7 +282,7 @@ class RecipesViewSet(viewsets.ModelViewSet):
     def shopping_cart(self, request, pk=None):
         return self.handle_relation(
             request,
-            name='shopping_list',
+            model=ShoppingCart,
             detail='Рецепт уже в списке покупок',
             detail_not_exists='Рецепта нет в списке покупок')
 
@@ -295,6 +296,6 @@ class RecipesViewSet(viewsets.ModelViewSet):
     def favorite(self, request, pk=None):
         return self.handle_relation(
             request,
-            name='favorites',
+            model=Favorite,
             detail='Рецепт уже в избранном',
             detail_not_exists='Рецепта нет в избранном')

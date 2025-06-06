@@ -21,9 +21,10 @@ class RecipesFilter(filters.FilterSet):
 
     def filter_user_relation(self, queryset, name, value):
         user = self.request.user
-        if user.is_authenticated and value:
-            if name == 'is_favorited':
-                return queryset.filter(favorite_recipes__in=[user])
-            if name == 'is_in_shopping_cart':
-                return queryset.filter(shopping_carts__in=[user])
+        if not user.is_authenticated or not value:
+            return queryset
+        if name == 'is_favorited':
+            return queryset.filter(favorites__user=user)
+        if name == 'is_in_shopping_cart':
+            return queryset.filter(shopping_carts__user=user)
         return queryset
