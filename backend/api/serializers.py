@@ -280,19 +280,8 @@ class RecipeWriteSerializer(serializers.ModelSerializer):
 class SubscriptionSerializer(IsSubscribedBaseSerializer):
     """Сериализатор для подписок."""
 
-    email = serializers.EmailField(read_only=True)
-    id = serializers.IntegerField(read_only=True)
-    username = serializers.CharField(read_only=True)
-    first_name = serializers.CharField(read_only=True)
-    last_name = serializers.CharField(read_only=True)
-    avatar = serializers.ImageField(use_url=True, read_only=True,
-                                    required=False, allow_null=True)
     recipes_count = serializers.IntegerField(read_only=True)
-    recipes = RecipeShortSerializer(
-        many=True,
-        read_only=True,
-        source='recipes_list'
-    )
+    recipes = serializers.SerializerMethodField(read_only=True)
 
     class Meta(IsSubscribedBaseSerializer.Meta):
         fields = (
@@ -306,3 +295,16 @@ class SubscriptionSerializer(IsSubscribedBaseSerializer):
             'recipes_count',
             'recipes',
         )
+
+    def get_recipes(self, obj):
+        try:
+            limit = int(
+                self.context.get('request').query_params.get('recipes_limit')
+            )
+        except (TypeError, ValueError):
+            limit = None
+        all_recipes_qs = obj.recipes.all()
+        return RecipeShortSerializer(
+            all_recipes_qs[:limit] if limit else all_recipes_qs,
+            many=True, context=self.context
+        ).data

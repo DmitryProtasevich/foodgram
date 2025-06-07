@@ -1,5 +1,4 @@
 from django.contrib.auth import get_user_model
-from django.db import IntegrityError
 from django.http import HttpResponse
 from django.shortcuts import get_object_or_404, redirect
 from django.utils.http import base36_to_int, int_to_base36
@@ -124,22 +123,15 @@ class UserViewSet(viewsets.ModelViewSet):
                     {'detail': 'Нельзя подписаться на самого себя'},
                     status=status.HTTP_400_BAD_REQUEST
                 )
-            try:
-                Follow.objects.create(user=request.user, following=author)
-            except IntegrityError:
+            if Follow.objects.filter(
+                user=request.user, following=author
+            ).exists():
                 return Response(
                     {'detail': 'Подписка уже существует'},
                     status=status.HTTP_400_BAD_REQUEST
                 )
-            try:
-                limit = int(request.query_params.get('recipes_limit'))
-            except (TypeError, ValueError):
-                limit = None
-            recipes = list(
-                author.recipes.all()[:limit]
-            ) if limit else list(author.recipes.all())
-            author.recipes_count = len(recipes)
-            author.recipes_list = recipes
+            Follow.objects.create(user=request.user, following=author)
+            author.recipes_count = author.recipes.count()
             return Response(SubscriptionSerializer(
                 author, context={'request': request}
             ).data, status=status.HTTP_201_CREATED)
@@ -163,29 +155,20 @@ class UserViewSet(viewsets.ModelViewSet):
         serializer_class=SubscriptionSerializer,
     )
     def subscriptions(self, request):
-        authors = User.objects.filter(
+        subscribed_authors_qs = User.objects.filter(
             subscribers__user=request.user
         ).prefetch_related('recipes')
-
-        page = self.paginate_queryset(authors)
-        authors = list(page) if page is not None else list(authors)
-        try:
-            limit = int(request.query_params.get('recipes_limit'))
-        except (TypeError, ValueError):
-            limit = None
-
+        page = self.paginate_queryset(subscribed_authors_qs)
+        authors = list(page) if page is not None else list(
+            subscribed_authors_qs
+        )
         for author in authors:
-            author.is_subscribed = True
-            recipes = list(
-                author.recipes.all()[:limit] if limit else author.recipes.all()
-            )
-            author.recipes_count, author.recipes_list = len(recipes), recipes
-
-        data = SubscriptionSerializer(
+            author.recipes_count = author.recipes.count()
+            author.recipes_list = author.recipes.all()
+        serializer = SubscriptionSerializer(
             authors, many=True, context={'request': request}
-        ).data
-        return (self.get_paginated_response(data)
-                if page is not None else Response(data))
+        )
+        return self.get_paginated_response(serializer.data)
 
 
 class TagsViewSet(viewsets.ReadOnlyModelViewSet):
