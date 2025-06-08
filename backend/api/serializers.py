@@ -24,7 +24,7 @@ class IsSubscribedBaseSerializer(serializers.ModelSerializer):
             return False
         return Follow.objects.filter(
             user=request.user,
-            following=obj
+            author=obj
         ).exists()
 
 

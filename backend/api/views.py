@@ -47,7 +47,7 @@ class UserViewSet(viewsets.ModelViewSet):
         qs = self.get_queryset()
         if request.user.is_authenticated:
             followed_ids = set(Follow.objects.filter(
-                user=request.user).values_list('following_id', flat=True))
+                user=request.user).values_list('author_id', flat=True))
             for user in qs:
                 user.is_subscribed = user.id in followed_ids
         return super().list(request, *args, **kwargs)
@@ -56,7 +56,7 @@ class UserViewSet(viewsets.ModelViewSet):
         obj = self.get_object()
         obj.is_subscribed = (
             request.user.is_authenticated and Follow.objects.filter(
-                user=request.user, following=obj
+                user=request.user, author=obj
             ).exists()
         )
         return super().retrieve(request, *args, **kwargs)
@@ -124,13 +124,13 @@ class UserViewSet(viewsets.ModelViewSet):
                     status=status.HTTP_400_BAD_REQUEST
                 )
             if Follow.objects.filter(
-                user=request.user, following=author
+                user=request.user, author=author
             ).exists():
                 return Response(
                     {'detail': 'Подписка уже существует'},
                     status=status.HTTP_400_BAD_REQUEST
                 )
-            Follow.objects.create(user=request.user, following=author)
+            Follow.objects.create(user=request.user, author=author)
             author.recipes_count = author.recipes.count()
             return Response(SubscriptionSerializer(
                 author, context={'request': request}
@@ -138,7 +138,7 @@ class UserViewSet(viewsets.ModelViewSet):
         elif request.method == 'DELETE':
             deleted, _ = Follow.objects.filter(
                 user=request.user,
-                following=author
+                author=author
             ).delete()
             if not deleted:
                 return Response(
@@ -156,7 +156,7 @@ class UserViewSet(viewsets.ModelViewSet):
     )
     def subscriptions(self, request):
         subscribed_authors_qs = User.objects.filter(
-            subscribers__user=request.user
+            author_subscriptions__user=request.user
         ).prefetch_related('recipes')
         page = self.paginate_queryset(subscribed_authors_qs)
         authors = list(page) if page is not None else list(

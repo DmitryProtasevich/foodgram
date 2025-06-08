@@ -11,7 +11,7 @@ class User(AbstractUser):
     """Модель пользователей."""
 
     USERNAME_FIELD = 'email'
-    REQUIRED_FIELDS = ['username']
+    REQUIRED_FIELDS = ('username', 'first_name', 'last_name')
     username = models.CharField(
         'Имя пользователя',
         max_length=LIMIT_USERNAME,
@@ -39,7 +39,6 @@ class User(AbstractUser):
     )
     avatar = models.ImageField(
         'Аватар',
-        blank=True,
         upload_to='users/%Y/%m/%d/',
     )
 
@@ -58,13 +57,13 @@ class Follow(models.Model):
     user = models.ForeignKey(
         settings.AUTH_USER_MODEL,
         on_delete=models.CASCADE,
-        related_name='subscriptions',
+        related_name='user_subscriptions',
         verbose_name='Подписчик'
     )
-    following = models.ForeignKey(
+    author = models.ForeignKey(
         settings.AUTH_USER_MODEL,
         on_delete=models.CASCADE,
-        related_name='subscribers',
+        related_name='author_subscriptions',
         verbose_name='Подписки'
     )
 
@@ -73,14 +72,14 @@ class Follow(models.Model):
         verbose_name_plural = 'Подписки'
         constraints = (
             models.UniqueConstraint(
-                name='unique_user_following',
-                fields=('user', 'following')
+                name='unique_user_author',
+                fields=('user', 'author')
             ),
         )
 
     def __str__(self):
-        return f'{self.user} подписан на {self.following}'
+        return f'{self.user} подписан на {self.author}'
 
     def clean(self):
-        if self.user == self.following:
+        if self.user == self.author:
             raise ValidationError('Нельзя подписаться на самого себя!')

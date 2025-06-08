@@ -34,6 +34,6 @@ class UserAdmin(BaseUserAdmin):
 class FollowAdmin(admin.ModelAdmin):
     """Административный интерфейс для управления подписками."""
 
-    list_display = ('id', 'user', 'following')
-    search_fields = ('user__username', 'following__username')
-    list_filter = ('user', 'following')
+    list_display = ('id', 'user', 'author')
+    search_fields = ('user__username', 'author__username')
+    list_filter = ('user', 'author')

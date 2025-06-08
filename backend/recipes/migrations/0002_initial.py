@@ -48,7 +48,7 @@ class Migration(migrations.Migration):
         ),
         migrations.AddField(
             model_name='follow',
-            name='following',
+            name='author',
             field=models.ForeignKey(on_delete=django.db.models.deletion.CASCADE, related_name='subscribers', to=settings.AUTH_USER_MODEL, verbose_name='Подписки'),
         ),
         migrations.AddField(
@@ -76,11 +76,11 @@ class Migration(migrations.Migration):
         ),
         migrations.AddConstraint(
             model_name='follow',
-            constraint=models.UniqueConstraint(fields=('user', 'following'), name='unique_user_following'),
+            constraint=models.UniqueConstraint(fields=('user', 'author'), name='unique_user_author'),
         ),
         migrations.AddConstraint(
             model_name='follow',
-            constraint=models.CheckConstraint(check=models.Q(('user', django.db.models.expressions.F('following')), _negated=True), name='prevent_self_follow'),
+            constraint=models.CheckConstraint(check=models.Q(('user', django.db.models.expressions.F('author')), _negated=True), name='prevent_self_follow'),
         ),
         migrations.AddConstraint(
             model_name='favorite',
