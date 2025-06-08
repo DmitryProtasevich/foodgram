@@ -16,6 +16,8 @@ class UserAdmin(BaseUserAdmin):
         'first_name',
         'last_name',
         'avatar_preview',
+        'recipes_count',
+        'followers_count'
     )
     empty_value_display = 'значение отсутствует'
     list_filter = ('username',)
@@ -28,6 +30,14 @@ class UserAdmin(BaseUserAdmin):
                 f'<img src="{obj.avatar.url}" width="80" height="60">'
             )
         return ''
+
+    @admin.display(description='Кол-во рецептов у пользователя')
+    def recipes_count(self, obj):
+        return obj.recipes.count()
+
+    @admin.display(description='Кол-во подписчиков у пользователя')
+    def followers_count(self, obj):
+        return obj.author_subscriptions.count()
 
 
 @admin.register(Follow)
