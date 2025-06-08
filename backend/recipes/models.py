@@ -29,7 +29,6 @@ class Ingredient(AbstractTitle):
     measurement_unit = models.CharField(
         'Единицы измерения',
         max_length=Constants.MAX_INGREDIENT_MEASUREMENT_LENGTH,
-        # blank=True
     )
 
     class Meta(AbstractTitle.Meta):
@@ -41,7 +40,6 @@ class Ingredient(AbstractTitle):
                 name='unique_name_measurement_unit'
             ),
         )
-        # default_related_name = 'ingredients'
 
 
 class Tag(AbstractTitle):

@@ -134,4 +134,4 @@ DJOSER = {
     'LOGIN_FIELD': 'email',
 }
 
-CSV_FILES_DIR = os.path.join(BASE_DIR, 'data/')
+JSON_FILES_DIR = os.path.join(BASE_DIR, 'data/')

@@ -23,15 +23,6 @@ class RecipeIngredientInline(admin.TabularInline):
     validate_min = True
 
 
-class RecipeTagInline(admin.TabularInline):
-    """Инлайн для добавления тегов к рецепту."""
-
-    model = Recipe.tags.through
-    extra = 0
-    min_num = 1
-    validate_min = True
-
-
 @admin.register(Recipe)
 class RecipeAdmin(admin.ModelAdmin):
     """Административный интерфейс для управления рецептами."""
@@ -41,16 +32,13 @@ class RecipeAdmin(admin.ModelAdmin):
                     'pub_date')
     search_fields = ('author__username', 'name', 'text')
     list_filter = ('tags', 'author')
-    exclude = ('tags',)
-    inlines = (RecipeIngredientInline, RecipeTagInline)
+    inlines = (RecipeIngredientInline, )
 
     @admin.display(description='Изображение')
     def image_preview(self, obj):
-        if obj.image:
-            return mark_safe(
-                f'<img src="{obj.image.url}" width="80" height="60">'
-            )
-        return ''
+        return mark_safe(
+            f'<img src="{obj.image.url}" width="80" height="60">'
+        )
 
     @admin.display(description='Теги')
     def get_tags(self, obj):
