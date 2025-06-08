@@ -29,13 +29,19 @@ class Ingredient(AbstractTitle):
     measurement_unit = models.CharField(
         'Единицы измерения',
         max_length=Constants.MAX_INGREDIENT_MEASUREMENT_LENGTH,
-        blank=True
+        # blank=True
     )
 
     class Meta(AbstractTitle.Meta):
         verbose_name = 'ингредиент'
         verbose_name_plural = 'Ингредиенты'
-        default_related_name = 'ingredients'
+        constraints = (
+            models.UniqueConstraint(
+                fields=('name', 'measurement_unit'),
+                name='unique_name_measurement_unit'
+            ),
+        )
+        # default_related_name = 'ingredients'
 
 
 class Tag(AbstractTitle):
@@ -52,14 +58,12 @@ class Tag(AbstractTitle):
         unique=True,
         max_length=Constants.MAX_TAG_NAME_LENGTH,
         db_index=True,
-        blank=True,
         null=True
     )
 
     class Meta(AbstractTitle.Meta):
         verbose_name = 'тег'
         verbose_name_plural = 'Теги'
-        default_related_name = 'tags'
 
 
 class RecipeIngredient(models.Model):
@@ -75,7 +79,9 @@ class RecipeIngredient(models.Model):
     )
     amount = models.PositiveIntegerField(
         'Количество ингредиентов',
-        validators=(MinValueValidator(Constants.MIN_AMOUNT),)
+        validators=(MinValueValidator(Constants.MIN_AMOUNT, message=(
+            'Количество ингредиентов не может быть меньше %(limit_value)s'
+        )),)
     )
 
     class Meta:
@@ -90,7 +96,7 @@ class RecipeIngredient(models.Model):
     def __str__(self):
         return (
             f'{self.ingredient.name} — {self.amount} '
-            f'{self.ingredient.measurement_unit or ""}'.strip()
+            f'{self.ingredient.measurement_unit}'.strip()
         )
 
 
@@ -123,7 +129,7 @@ class Recipe(AbstractTitle):
         upload_to='recipes/%Y/%m/%d/',
     )
     text = models.TextField('Описание')
-    cooking_time = models.IntegerField(
+    cooking_time = models.PositiveSmallIntegerField(
         'Время приготовления (в минутах)',
         validators=(MinValueValidator(Constants.MIN_TIME),),
     )
@@ -164,8 +170,11 @@ class AbstractUserRecipe(models.Model):
 
     def __str__(self):
         if self.recipe and len(self.recipe.name) > Constants.MAX_TITLE_LENGTH:
-            return f'{self.recipe.name[:Constants.MAX_TITLE_LENGTH]}...'
-        return self.recipe.name if self.recipe else ''
+            return (
+                f'{self._meta.verbose_name}:'
+                f' {self.recipe.name[:Constants.MAX_TITLE_LENGTH]}...'
+            )
+        return f'{self._meta.verbose_name}: {self.recipe.name}'
 
 
 class ShoppingCart(AbstractUserRecipe):
