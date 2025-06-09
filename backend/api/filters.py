@@ -11,7 +11,6 @@ class RecipesFilter(filters.FilterSet):
         to_field_name='slug',
         queryset=Tag.objects.all(),
     )
-    author = filters.NumberFilter(field_name='author')
     is_favorited = filters.BooleanFilter(method='filter_user_relation')
     is_in_shopping_cart = filters.BooleanFilter(method='filter_user_relation')
 
@@ -21,8 +20,8 @@ class RecipesFilter(filters.FilterSet):
 
     def filter_user_relation(self, queryset, name, value):
         user = self.request.user
-        if not user.is_authenticated or not value:
-            return queryset
+        # if not user.is_authenticated or not value:
+        #     return queryset
         if name == 'is_favorited':
             return queryset.filter(favorites__user=user)
         if name == 'is_in_shopping_cart':
