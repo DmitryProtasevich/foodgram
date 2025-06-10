@@ -2,7 +2,7 @@ from django.contrib import admin
 from django.contrib.auth.admin import UserAdmin as BaseUserAdmin
 from django.utils.safestring import mark_safe
 
-from .models import Follow, User
+from users.models import Follow, User
 
 
 @admin.register(User)

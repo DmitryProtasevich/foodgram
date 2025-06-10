@@ -10,18 +10,18 @@ from rest_framework import filters, permissions, status, viewsets
 from rest_framework.decorators import action
 from rest_framework.response import Response
 
+from api.filters import RecipesFilter
+from api.permissions import IsAuthorOrReadOnly
+from api.serializers import (AvatarSerializer, FavoriteSerializer,
+                             IngredientsSerializer, RecipeReadSerializer,
+                             RecipeWriteSerializer, ShoppingCartSerializer,
+                             SubscriptionCreateSerializer,
+                             SubscriptionSerializer, TagsSerializer,
+                             UserDetailSerializer)
+from api.utils import generate_shoping_list
 from recipes.models import (Favorite, Ingredient, Recipe, RecipeIngredient,
                             ShoppingCart, Tag)
 from users.models import Follow
-
-from .filters import RecipesFilter
-from .permissions import IsAuthorOrReadOnly
-from .serializers import (AvatarSerializer, FavoriteSerializer,
-                          IngredientsSerializer, RecipeReadSerializer,
-                          RecipeWriteSerializer, ShoppingCartSerializer,
-                          SubscriptionCreateSerializer, SubscriptionSerializer,
-                          TagsSerializer, UserDetailSerializer)
-from .utils import generate_shoping_list
 
 User = get_user_model()
 
