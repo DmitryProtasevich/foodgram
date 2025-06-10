@@ -17,7 +17,7 @@ class UserDetailSerializer(DjoserUserSerializer):
     is_subscribed = serializers.SerializerMethodField(read_only=True)
 
     class Meta(DjoserUserSerializer.Meta):
-        fields = DjoserUserSerializer.Meta.fields+(
+        fields = DjoserUserSerializer.Meta.fields + (
             'is_subscribed',
             'avatar'
         )
@@ -25,8 +25,8 @@ class UserDetailSerializer(DjoserUserSerializer):
     def get_is_subscribed(self, obj):
         request = self.context['request'].user
         return (
-            request.is_authenticated and
-            obj.author_subscriptions.filter(user=request).exists()
+            request.is_authenticated
+            and obj.author_subscriptions.filter(user=request).exists()
         )
 
 
@@ -220,7 +220,7 @@ class SubscriptionSerializer(UserDetailSerializer):
     recipes = serializers.SerializerMethodField(read_only=True)
 
     class Meta(UserDetailSerializer.Meta):
-        fields = UserDetailSerializer.Meta.fields+(
+        fields = UserDetailSerializer.Meta.fields + (
             'recipes_count',
             'recipes',
         )
