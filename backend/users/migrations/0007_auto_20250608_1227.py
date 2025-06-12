@@ -15,7 +15,7 @@ class Migration(migrations.Migration):
         migrations.AlterField(
             model_name='follow',
             name='author',
-            field=models.ForeignKey(on_delete=django.db.models.deletion.CASCADE, related_name='author_subscriptions', to=settings.AUTH_USER_MODEL, verbose_name='Подписки'),
+            field=models.ForeignKey(on_delete=django.db.models.deletion.CASCADE, related_name='subscriptions_to_author', to=settings.AUTH_USER_MODEL, verbose_name='Подписки'),
         ),
         migrations.AlterField(
             model_name='follow',

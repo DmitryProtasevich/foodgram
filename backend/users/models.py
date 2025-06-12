@@ -40,6 +40,8 @@ class User(AbstractUser):
     avatar = models.ImageField(
         'Аватар',
         upload_to='users/%Y/%m/%d/',
+        blank=True,
+        null=True
     )
 
     class Meta:
@@ -63,7 +65,7 @@ class Follow(models.Model):
     author = models.ForeignKey(
         settings.AUTH_USER_MODEL,
         on_delete=models.CASCADE,
-        related_name='author_subscriptions',
+        related_name='subscriptions_to_author',
         verbose_name='Подписки'
     )
 

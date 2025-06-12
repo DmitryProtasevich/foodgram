@@ -1,5 +1,5 @@
 from django.contrib.auth import get_user_model
-from django.db.models import Count, Exists, OuterRef, Sum
+from django.db.models import Count, Exists, F, OuterRef, Sum, Value
 from django.http import FileResponse
 from django.shortcuts import get_object_or_404
 from django.urls import reverse
@@ -18,7 +18,7 @@ from api.serializers import (AvatarSerializer, FavoriteSerializer,
                              SubscriptionCreateSerializer,
                              SubscriptionSerializer, TagsSerializer,
                              UserDetailSerializer)
-from api.utils import generate_shoping_list
+from api.services import generate_shoping_list
 from recipes.models import (Favorite, Ingredient, Recipe, RecipeIngredient,
                             ShoppingCart, Tag)
 from users.models import Follow
@@ -54,12 +54,11 @@ class UserViewSet(DjoserViewSet):
         permission_classes=(permissions.IsAuthenticated,),
     )
     def avatar(self, request):
-        if request.method == 'PUT':
-            serializer = AvatarSerializer(
-                request.user, data=request.data, context={'request': request})
-            serializer.is_valid(raise_exception=True)
-            serializer.save()
-            return Response(serializer.data)
+        serializer = AvatarSerializer(
+            request.user, data=request.data, context={'request': request})
+        serializer.is_valid(raise_exception=True)
+        serializer.save()
+        return Response(serializer.data)
 
     @avatar.mapping.delete
     def delete_avatar(self, request):
@@ -82,7 +81,7 @@ class UserViewSet(DjoserViewSet):
             context={'request': request}
         )
         serializer.is_valid(raise_exception=True)
-        serializer.save()
+        serializer.save(user=self.request.user)
         return Response(serializer.data, status=status.HTTP_201_CREATED)
 
     @subscribe.mapping.delete
@@ -105,9 +104,11 @@ class UserViewSet(DjoserViewSet):
         serializer_class=SubscriptionSerializer
     )
     def subscriptions(self, request):
-        subscribed_authors_qs = User.objects.filter(
-            author_subscriptions__user=request.user
-        ).annotate(recipes_count=Count('recipes')).prefetch_related('recipes')
+        subscribed_authors_qs = (
+            User.objects.filter(subscriptions_to_author__user=request.user)
+            .annotate(recipes_count=Count('recipes'))
+            .order_by('-recipes_count').prefetch_related('recipes')
+        )
         page = self.paginate_queryset(subscribed_authors_qs)
         serializer = self.get_serializer(
             page if page is not None else subscribed_authors_qs, many=True
@@ -141,16 +142,23 @@ class RecipesViewSet(viewsets.ModelViewSet):
     permission_classes = (IsAuthorOrReadOnly,)
 
     def get_queryset(self):
-        user_id = getattr(self.request.user, 'id', None)
-        return Recipe.objects.all().annotate(
-            is_favorited=Exists(Favorite.objects.filter(
-                recipe=OuterRef('pk'),
-                user_id=user_id
-            )),
-            is_in_shopping_cart=Exists(ShoppingCart.objects.filter(
-                recipe=OuterRef('pk'),
-                user_id=user_id
-            )),
+        user = self.request.user
+        queryset = (
+            Recipe.objects.select_related('author')
+            .prefetch_related('tags', 'ingredients')
+        )
+        if user.is_authenticated:
+            return queryset.annotate(
+                is_favorited=Exists(Favorite.objects.filter(
+                    recipe=OuterRef('pk'), user=user
+                )),
+                is_in_shopping_cart=Exists(ShoppingCart.objects.filter(
+                    recipe=OuterRef('pk'), user=user
+                )),
+            ).order_by('-is_favorited', '-is_in_shopping_cart')
+        return queryset.annotate(
+            is_favorited=Value(False),
+            is_in_shopping_cart=Value(False)
         )
 
     def get_serializer_class(self):
@@ -172,7 +180,7 @@ class RecipesViewSet(viewsets.ModelViewSet):
 
     @action(
         detail=False,
-        methods=['get'],
+        methods=('get',),
         url_path='download_shopping_cart',
         permission_classes=(permissions.IsAuthenticated,),
         pagination_class=None
@@ -181,8 +189,9 @@ class RecipesViewSet(viewsets.ModelViewSet):
         ingredients = (
             RecipeIngredient.objects
             .filter(recipe__shopping_carts__user=request.user)
-            .values('ingredient__name', 'ingredient__measurement_unit')
-            .annotate(total_amount=Sum('amount')).order_by('ingredient__name')
+            .values(name=F('ingredient__name'),
+                    measurement_unit=F('ingredient__measurement_unit'))
+            .annotate(total_amount=Sum('amount')).order_by('name')
         )
         text_content = generate_shoping_list(ingredients)
         return FileResponse(
@@ -196,7 +205,7 @@ class RecipesViewSet(viewsets.ModelViewSet):
         serializer = serializer_cls(data=data, context={'request': request})
         serializer.is_valid(raise_exception=True)
         serializer.save()
-        return Response(serializer.data, status=201)
+        return Response(serializer.data, status=status.HTTP_201_CREATED)
 
     def delete_relation(self, request, model, pk):
         recipe = get_object_or_404(Recipe, pk=pk)

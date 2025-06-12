@@ -130,10 +130,8 @@ DJOSER = {
     'USER_CREATE_PASSWORD_RETYPE': False,
     'LOGIN_FIELD': 'email',
     'PERMISSIONS': {
-        'user_create': ('rest_framework.permissions.AllowAny',),
         'user': ('rest_framework.permissions.AllowAny',),
         'user_list': ('rest_framework.permissions.AllowAny',),
-        'set_password': ('rest_framework.permissions.IsAuthenticated',),
     },
     'SERIALIZERS': {
         'user': 'api.serializers.UserDetailSerializer',

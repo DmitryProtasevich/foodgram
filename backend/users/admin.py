@@ -37,7 +37,7 @@ class UserAdmin(BaseUserAdmin):
 
     @admin.display(description='Кол-во подписчиков у пользователя')
     def followers_count(self, obj):
-        return obj.author_subscriptions.count()
+        return obj.subscriptions_to_author.count()
 
 
 @admin.register(Follow)

@@ -1,5 +1,5 @@
 from django.conf import settings
-from django.core.validators import MinValueValidator
+from django.core.validators import MaxValueValidator, MinValueValidator
 from django.db import models
 
 from recipes.constants import Constants
@@ -56,7 +56,6 @@ class Tag(AbstractTitle):
         unique=True,
         max_length=Constants.MAX_TAG_NAME_LENGTH,
         db_index=True,
-        null=True
     )
 
     class Meta(AbstractTitle.Meta):
@@ -78,7 +77,8 @@ class RecipeIngredient(models.Model):
     amount = models.PositiveIntegerField(
         'Количество ингредиентов',
         validators=(MinValueValidator(Constants.MIN_AMOUNT, message=(
-            'Количество ингредиентов не может быть меньше %(limit_value)s'
+            f'Количество ингредиентов не может быть меньше '
+            f'{Constants.MIN_AMOUNT}'
         )),)
     )
 
@@ -129,7 +129,8 @@ class Recipe(AbstractTitle):
     text = models.TextField('Описание')
     cooking_time = models.PositiveSmallIntegerField(
         'Время приготовления (в минутах)',
-        validators=(MinValueValidator(Constants.MIN_TIME),),
+        validators=(MinValueValidator(Constants.MIN_TIME),
+                    MaxValueValidator(Constants.MAX_TIME)),
     )
     pub_date = models.DateTimeField(
         'Дата публикации', auto_now_add=True
@@ -167,7 +168,7 @@ class AbstractUserRecipe(models.Model):
         )
 
     def __str__(self):
-        if self.recipe and len(self.recipe.name) > Constants.MAX_TITLE_LENGTH:
+        if len(self.recipe.name) > Constants.MAX_TITLE_LENGTH:
             return (
                 f'{self._meta.verbose_name}:'
                 f' {self.recipe.name[:Constants.MAX_TITLE_LENGTH]}...'

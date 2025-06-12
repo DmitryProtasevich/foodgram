@@ -23,10 +23,10 @@ class UserDetailSerializer(DjoserUserSerializer):
         )
 
     def get_is_subscribed(self, obj):
-        request = self.context['request'].user
+        request = self.context['request']
         return (
-            request.is_authenticated
-            and obj.author_subscriptions.filter(user=request).exists()
+            request.user.is_authenticated
+            and obj.subscriptions_to_author.filter(user=request.user).exists()
         )
 
 
@@ -72,10 +72,7 @@ class RecipeIngredientReadSerializer(serializers.ModelSerializer):
 
 class RecipeIngredientWriteSerializer(serializers.ModelSerializer):
     """Сериализатор для создания ингредиентов рецепта."""
-    id = serializers.PrimaryKeyRelatedField(
-        queryset=Ingredient.objects.all(),
-        source='ingredient',
-    )
+    id = serializers.PrimaryKeyRelatedField(queryset=Ingredient.objects.all(),)
     amount = serializers.IntegerField(
         min_value=Constants.MIN_AMOUNT,
         error_messages={
@@ -108,8 +105,10 @@ class RecipeReadSerializer(serializers.ModelSerializer):
         source='recipe_ingredients', many=True, read_only=True
     )
     image = Base64ImageField(read_only=True)
-    is_favorited = serializers.BooleanField(read_only=True)
-    is_in_shopping_cart = serializers.BooleanField(read_only=True)
+    is_favorited = serializers.BooleanField(read_only=True, default=False)
+    is_in_shopping_cart = serializers.BooleanField(
+        read_only=True, default=False
+    )
 
     class Meta:
         model = Recipe
@@ -141,7 +140,7 @@ class RecipeWriteSerializer(serializers.ModelSerializer):
         return RecipeIngredient.objects.bulk_create([
             RecipeIngredient(
                 recipe=recipe,
-                ingredient=ingredient['ingredient'],
+                ingredient=ingredient['id'],
                 amount=ingredient['amount']
             )for ingredient in ingredients
         ])
@@ -151,7 +150,7 @@ class RecipeWriteSerializer(serializers.ModelSerializer):
             raise serializers.ValidationError(
                 'Поле не может быть пустым!'
             )
-        ingredient_ids = [item['ingredient'].id for item in ingredients]
+        ingredient_ids = [item['id'].id for item in ingredients]
         if len(ingredient_ids) != len(set(ingredient_ids)):
             raise serializers.ValidationError(
                 'Ингредиенты не должны повторяться!'
@@ -202,13 +201,7 @@ class RecipeWriteSerializer(serializers.ModelSerializer):
         return super().update(instance, validated_data)
 
     def to_representation(self, instance):
-        return RecipeReadSerializer(
-            self.context['view']
-                .get_queryset()
-                .filter(pk=instance.pk)
-                .first(),
-            context=self.context
-        ).data
+        return RecipeReadSerializer(instance, context=self.context).data
 
 
 class SubscriptionSerializer(UserDetailSerializer):
@@ -239,10 +232,6 @@ class SubscriptionSerializer(UserDetailSerializer):
 class SubscriptionCreateSerializer(serializers.ModelSerializer):
     """Сериализатор для создания подписок."""
 
-    author = serializers.PrimaryKeyRelatedField(
-        queryset=User.objects.all()
-    )
-
     class Meta:
         model = Follow
         fields = ('author',)
@@ -261,11 +250,6 @@ class SubscriptionCreateSerializer(serializers.ModelSerializer):
             )
         return data
 
-    def create(self, validated_data):
-        return Follow.objects.create(
-            user=self.context['request'].user, **validated_data
-        )
-
     def to_representation(self, instance):
         return SubscriptionSerializer(
             instance.author,
@@ -273,49 +257,34 @@ class SubscriptionCreateSerializer(serializers.ModelSerializer):
         ).data
 
 
-class ShoppingCartSerializer(serializers.ModelSerializer):
+class ShoppingCartFavoriteBaseSerializer(serializers.ModelSerializer):
+    """Базовый сериализатор для корзины покупок и избранного."""
+
+    def validate(self, data):
+        user = self.context['request'].user
+        recipe = data['recipe']
+        if self.Meta.model.objects.filter(user=user, recipe=recipe).exists():
+            raise serializers.ValidationError({
+                'detail': f'Рецепт уже в {self.Meta.model._meta.verbose_name}'
+            })
+        return data
+
+    def to_representation(self, instance):
+        return RecipeShortSerializer(instance.recipe,
+                                     context=self.context).data
+
+
+class ShoppingCartSerializer(ShoppingCartFavoriteBaseSerializer):
     """Сериализатор для корзины покупок."""
 
     class Meta:
         model = ShoppingCart
         fields = '__all__'
 
-    def validate(self, data):
-        user = self.context['request'].user
-        recipe = data['recipe']
-        if ShoppingCart.objects.filter(user=user, recipe=recipe).exists():
-            raise serializers.ValidationError(
-                {'detail': 'Рецепт уже в списке покупок'}
-            )
-        return data
 
-    def create(self, validated_data):
-        return ShoppingCart.objects.create(**validated_data)
-
-    def to_representation(self, instance):
-        return RecipeShortSerializer(instance.recipe,
-                                     context=self.context).data
-
-
-class FavoriteSerializer(serializers.ModelSerializer):
+class FavoriteSerializer(ShoppingCartFavoriteBaseSerializer):
     """Сериализатор для избранного."""
 
     class Meta:
         model = Favorite
         fields = '__all__'
-
-    def validate(self, data):
-        user = self.context['request'].user
-        recipe = data['recipe']
-        if Favorite.objects.filter(user=user, recipe=recipe).exists():
-            raise serializers.ValidationError(
-                {'detail': 'Рецепт уже в списке покупок'}
-            )
-        return data
-
-    def create(self, validated_data):
-        return Favorite.objects.create(**validated_data)
-
-    def to_representation(self, instance):
-        return RecipeShortSerializer(instance.recipe,
-                                     context=self.context).data
