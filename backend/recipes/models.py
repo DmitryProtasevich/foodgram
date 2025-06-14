@@ -168,12 +168,10 @@ class AbstractUserRecipe(models.Model):
         )
 
     def __str__(self):
-        if len(self.recipe.name) > Constants.MAX_TITLE_LENGTH:
-            return (
-                f'{self._meta.verbose_name}:'
-                f' {self.recipe.name[:Constants.MAX_TITLE_LENGTH]}...'
-            )
-        return f'{self._meta.verbose_name}: {self.recipe.name}'
+        return (
+            f'{self._meta.verbose_name}:'
+            f' {self.recipe.name[:Constants.MAX_TITLE_LENGTH]}...'
+        )
 
 
 class ShoppingCart(AbstractUserRecipe):

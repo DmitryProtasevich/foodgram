@@ -1,5 +1,5 @@
 from django.contrib.auth import get_user_model
-from django.db.models import Count, Exists, F, OuterRef, Sum, Value
+from django.db.models import Count, Exists, F, OuterRef, Sum
 from django.http import FileResponse
 from django.shortcuts import get_object_or_404
 from django.urls import reverse
@@ -107,7 +107,7 @@ class UserViewSet(DjoserViewSet):
         subscribed_authors_qs = (
             User.objects.filter(subscriptions_to_author__user=request.user)
             .annotate(recipes_count=Count('recipes'))
-            .order_by('-recipes_count').prefetch_related('recipes')
+            .order_by('username').prefetch_related('recipes')
         )
         page = self.paginate_queryset(subscribed_authors_qs)
         serializer = self.get_serializer(
@@ -156,10 +156,7 @@ class RecipesViewSet(viewsets.ModelViewSet):
                     recipe=OuterRef('pk'), user=user
                 )),
             ).order_by('-is_favorited', '-is_in_shopping_cart')
-        return queryset.annotate(
-            is_favorited=Value(False),
-            is_in_shopping_cart=Value(False)
-        )
+        return queryset
 
     def get_serializer_class(self):
         if self.request.method in permissions.SAFE_METHODS:
