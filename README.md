@@ -2,6 +2,8 @@
 
 [![Main Foodgram workflow](https://github.com/DmitryProtasevich/foodgram/actions/workflows/main.yaml/badge.svg)](https://github.com/DmitryProtasevich/foodgram/actions/workflows/main.yaml)
 
+Адрес сайта: [https://myfoodgram.duckdns.org](https://myfoodgram.duckdns.org)
+
 ## О проекте
 **Foodgram** — это платформа для публикации и обмена рецептами. Зарегистрированные пользователи могут публиковать собственные рецепты с фотографиями, отмечать понравившиеся рецепты в избранном, формировать «Список покупок» и подписываться на других авторов. «Список покупок» позволит создавать список продуктов, которые нужно купить для приготовления выбранных блюд.  
 **Проект будет полезен** 
