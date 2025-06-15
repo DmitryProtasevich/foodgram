@@ -11,14 +11,14 @@ class RecipesFilter(filters.FilterSet):
         to_field_name='slug',
         queryset=Tag.objects.all(),
     )
-    is_favorited = filters.BooleanFilter(method='check_auth')
-    is_in_shopping_cart = filters.BooleanFilter(method='check_auth')
+    is_favorited = filters.BooleanFilter(method='filter_user_relation')
+    is_in_shopping_cart = filters.BooleanFilter(method='filter_user_relation')
 
     class Meta:
         model = Recipe
         fields = ('tags', 'author', 'is_in_shopping_cart', 'is_favorited')
 
-    def check_auth(self, queryset, name, value):
-        if self.request.user.is_anonymous:
+    def filter_user_relation(self, queryset, name, value):
+        if not self.request.user.id:
             return queryset
         return queryset.filter(**{name: value})
